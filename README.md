@@ -15,6 +15,7 @@
 ## Features
 
 - **Live Search:** Enable users to quickly filter options as they type.
+- **Ajax call:** Remote data with infinite scrolling
 - **Multi-Select Support:** Allows for multiple selections with intuitive tag management.
 - **Optgroup Selection:** Easily select or deselect all options within an optgroup.
 - **Clear All Button:** Option to clear all selected options at once (for multi-select).

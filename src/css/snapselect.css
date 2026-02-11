@@ -232,3 +232,54 @@
 .snap-select-items::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+
+/* ============================================================
+   AJAX additions — appended for remote data + infinite scroll
+   ============================================================ */
+
+/* Loading spinner row shown while fetching */
+.snap-select-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+/* Animated spinner circle before the loading text */
+.snap-select-loading::before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ced4da;
+    border-top-color: #0d6efd;
+    border-radius: 50%;
+    animation: snap-select-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes snap-select-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* "No results" and error messages */
+.snap-select-no-results,
+.snap-select-error {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.snap-select-error {
+    color: #dc3545;
+}
+
+/* 1 px invisible sentinel div — triggers infinite scroll via IntersectionObserver */
+.snap-select-infinite-anchor {
+    height: 1px;
+    width: 100%;
+}

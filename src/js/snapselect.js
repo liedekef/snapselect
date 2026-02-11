@@ -5,7 +5,7 @@
    * @param {HTMLElement} element - The select element to be enhanced.
    * @param {Object} options - An object containing configuration options.
    * 
-   * Options:
+   * Core Options:
    * - liveSearch (boolean): Enables search functionality within the dropdown.
    * - maxSelections (number): Limits the number of selections (for multiple select).
    * - placeholder (string): Placeholder text for the select box.
@@ -14,6 +14,44 @@
    * - selectAllOption (boolean): Adds a "Select All" option to the dropdown (for multiple select).
    * - closeOnSelect (boolean): Closes the dropdown after selecting an option (single-select only).
    * - allowEmpty (boolean): Allows deselection of a selected option (for single select).
+   *
+   * AJAX + Paging Options:
+   * - ajax (object): Enables remote data loading.
+   *     - url (string|function): Endpoint URL, or a function(searchTerm, page) => string.
+   *     - data (function): Optional. function(searchTerm, page) => object of extra params.
+   *     - method (string): HTTP method, default 'GET'.
+   *     - processResults (function): Maps the raw response to { results: [{id, text}], hasMore: bool }.
+   *     - delay (number): Debounce delay in ms for search input, default 300.
+   *     - minimumInputLength (number): Minimum characters before fetching, default 0.
+   *     - cache (boolean): Cache results per (search+page) key, default true.
+   *     - headers (object): Extra request headers.
+   * - pageSize (number): Items per page when using AJAX (informational, sent to server), default 20.
+   * - loadingText (string): Text shown while loading, default 'Loading...'.
+   * - noResultsText (string): Text shown when no results found, default 'No results found'.
+   * - errorText (string): Text shown on fetch error, default 'Error loading results'.
+   *
+   * Country → State cascade example:
+   *
+   *   <select id="country" data-placeholder="Select country..."></select>
+   *   <select id="state"   data-placeholder="Select state..." disabled></select>
+   *
+   *   const countrySelect = SnapSelect('#country', {
+   *     ajax: {
+   *       url: '/api/countries',
+   *       processResults: r => ({ results: r.data, hasMore: r.meta.hasMore })
+   *     }
+   *   });
+   *
+   *   document.getElementById('country').addEventListener('change', function() {
+   *     const stateEl = document.getElementById('state');
+   *     stateEl.disabled = !this.value;
+   *     SnapSelect('#state', {
+   *       ajax: {
+   *         url: (search, page) => `/api/states?country=${this.value}&q=${search}&page=${page}`,
+   *         processResults: r => ({ results: r.data, hasMore: r.meta.hasMore })
+   *       }
+   *     });
+   *   });
    */
     function SnapSelect(element, options = {}) {
         const select = element;
@@ -21,34 +59,63 @@
         
         // Read options from data attributes
         const dataOptions = {
-            liveSearch: select.hasAttribute('data-live-search') ? select.getAttribute('data-live-search') === 'true' : undefined,
-            maxSelections: select.hasAttribute('data-max-selections') ? parseInt(select.getAttribute('data-max-selections')) : undefined,
-            placeholder: select.hasAttribute('data-placeholder') ? select.getAttribute('data-placeholder') : undefined,
-            clearAllButton: select.hasAttribute('data-clear-all-button') ? select.getAttribute('data-clear-all-button') === 'true' : undefined,
-            selectOptgroups: select.hasAttribute('data-select-optgroups') ? select.getAttribute('data-select-optgroups') === 'true' : undefined,
-            selectAllOption: select.hasAttribute('data-select-all-option') ? select.getAttribute('data-select-all-option') === 'true' : undefined,
-            closeOnSelect: select.hasAttribute('data-close-on-select') ? select.getAttribute('data-close-on-select') === 'true' : undefined,
-            allowEmpty: select.hasAttribute('data-allow-empty') ? select.getAttribute('data-allow-empty') === 'true' : undefined
+            liveSearch:      select.hasAttribute('data-live-search')      ? select.getAttribute('data-live-search') === 'true'       : undefined,
+            maxSelections:   select.hasAttribute('data-max-selections')   ? parseInt(select.getAttribute('data-max-selections'))     : undefined,
+            placeholder:     select.hasAttribute('data-placeholder')      ? select.getAttribute('data-placeholder')                  : undefined,
+            clearAllButton:  select.hasAttribute('data-clear-all-button') ? select.getAttribute('data-clear-all-button') === 'true'  : undefined,
+            selectOptgroups: select.hasAttribute('data-select-optgroups') ? select.getAttribute('data-select-optgroups') === 'true'  : undefined,
+            selectAllOption: select.hasAttribute('data-select-all-option')? select.getAttribute('data-select-all-option') === 'true' : undefined,
+            closeOnSelect:   select.hasAttribute('data-close-on-select')  ? select.getAttribute('data-close-on-select') === 'true'   : undefined,
+            allowEmpty:      select.hasAttribute('data-allow-empty')      ? select.getAttribute('data-allow-empty') === 'true'       : undefined
         };
         
-        // Combine default options, plugin default options, and user options
+        // Combine default options with user options
         const config = {
-            liveSearch: dataOptions.liveSearch !== undefined ? dataOptions.liveSearch : (options.liveSearch !== undefined ? options.liveSearch : false),
-            maxSelections: dataOptions.maxSelections !== undefined ? dataOptions.maxSelections : (options.maxSelections !== undefined ? options.maxSelections : Infinity),
-            placeholder: dataOptions.placeholder !== undefined ? dataOptions.placeholder : (options.placeholder !== undefined ? options.placeholder : 'Select...'),
-            clearAllButton: dataOptions.clearAllButton !== undefined ? dataOptions.clearAllButton : (options.clearAllButton !== undefined ? options.clearAllButton : false),
+            liveSearch:      dataOptions.liveSearch      !== undefined ? dataOptions.liveSearch      : (options.liveSearch      !== undefined ? options.liveSearch      : false),
+            maxSelections:   dataOptions.maxSelections   !== undefined ? dataOptions.maxSelections   : (options.maxSelections   !== undefined ? options.maxSelections   : Infinity),
+            placeholder:     dataOptions.placeholder     !== undefined ? dataOptions.placeholder     : (options.placeholder     !== undefined ? options.placeholder     : 'Select...'),
+            clearAllButton:  dataOptions.clearAllButton  !== undefined ? dataOptions.clearAllButton  : (options.clearAllButton  !== undefined ? options.clearAllButton  : false),
             selectOptgroups: dataOptions.selectOptgroups !== undefined ? dataOptions.selectOptgroups : (options.selectOptgroups !== undefined ? options.selectOptgroups : false),
             selectAllOption: dataOptions.selectAllOption !== undefined ? dataOptions.selectAllOption : (options.selectAllOption !== undefined ? options.selectAllOption : false),
-            closeOnSelect: dataOptions.closeOnSelect !== undefined ? dataOptions.closeOnSelect : (options.closeOnSelect !== undefined ? options.closeOnSelect : true),
-            allowEmpty: dataOptions.allowEmpty !== undefined ? dataOptions.allowEmpty : (options.allowEmpty !== undefined ? options.allowEmpty : false)
+            closeOnSelect:   dataOptions.closeOnSelect   !== undefined ? dataOptions.closeOnSelect   : (options.closeOnSelect   !== undefined ? options.closeOnSelect   : true),
+            allowEmpty:      dataOptions.allowEmpty      !== undefined ? dataOptions.allowEmpty      : (options.allowEmpty      !== undefined ? options.allowEmpty      : false),
+
+            // AJAX options
+            ajax:            options.ajax   || null,
+            pageSize:        options.pageSize        !== undefined ? options.pageSize        : 20,
+            loadingText:     options.loadingText     !== undefined ? options.loadingText     : 'Loading...',
+            noResultsText:   options.noResultsText   !== undefined ? options.noResultsText   : 'No results found',
+            errorText:       options.errorText       !== undefined ? options.errorText       : 'Error loading results'
         };
+
+        // Normalise ajax sub-options
+        if (config.ajax) {
+            config.ajax = Object.assign({
+                method:             'GET',
+                delay:              300,
+                minimumInputLength: 0,
+                cache:              true,
+                headers:            {},
+                data:               null,
+                processResults:     null
+            }, config.ajax);
+        }
+
+        // ── AJAX state ────────────────────────────────────────────────────────────
+        const ajaxCache       = new Map();   // key → [{id,text}]
+        let   currentPage     = 1;
+        let   currentSearch   = '';
+        let   hasMorePages    = false;
+        let   isLoadingAjax   = false;
+        let   debounceTimer   = null;
+        let   activeRequest   = null;        // AbortController for in-flight requests
 
         // Store references for public methods
         this.selectElement = select;
-        this.config = config;
-        this.isMultiple = isMultiple;
+        this.config        = config;
+        this.isMultiple    = isMultiple;
 
-        // Apply ARIA roles and attributes
+        // ── DOM construction ─────────────────────────────────────────────────────
         const customSelect = document.createElement('div');
         customSelect.classList.add('snap-select');
         customSelect.setAttribute('role', 'combobox');
@@ -60,33 +127,32 @@
         const selectedContainer = document.createElement('div');
         selectedContainer.classList.add('snap-select-selected');
         selectedContainer.setAttribute('aria-live', 'polite');
-        selectedContainer.setAttribute('tabindex', '0'); // Make focusable
+        selectedContainer.setAttribute('tabindex', '0');
         customSelect.appendChild(selectedContainer);
         
         const tagContainer = document.createElement('div');
         tagContainer.classList.add('snap-select-tags');
         selectedContainer.appendChild(tagContainer);
 
-        // Dropdown and overlay will be created on demand and appended to body
-        let itemsContainer = null;
-        let dropdownOverlay = null;
-        let searchInput = null;
+        let itemsContainer   = null;
+        let dropdownOverlay  = null;
+        let searchInput      = null;
         let clearSearchButton = null;
+        let loadingIndicator = null;
+        let infiniteAnchor   = null;   // sentinel div watched by IntersectionObserver
+        let infiniteObserver = null;
 
-        // Store selected values and checkbox references
         const selectedValues = new Set();
-        const checkboxMap = new Map(); // Map of value -> checkbox element
+        const checkboxMap    = new Map();
 
-        // Function to update display and select element
+        // ── Display helpers ──────────────────────────────────────────────────────
         const updateDisplay = () => {
             tagContainer.innerHTML = '';
 
-            // Update actual select element
             Array.from(select.options).forEach(opt => {
                 opt.selected = selectedValues.has(opt.value);
             });
 
-            // Trigger change event
             select.dispatchEvent(new Event('change', { bubbles: true }));
 
             if (selectedValues.size === 0) {
@@ -95,9 +161,7 @@
                 placeholder.textContent = config.placeholder;
                 tagContainer.appendChild(placeholder);
             } else {
-                const selectedArray = Array.from(selectedValues);
-
-                selectedArray.forEach(val => {
+                Array.from(selectedValues).forEach(val => {
                     const option = select.querySelector(`option[value="${val}"]`);
                     if (!option) return;
 
@@ -111,11 +175,8 @@
                     removeButton.addEventListener('click', (e) => {
                         e.stopPropagation();
                         selectedValues.delete(val);
-                        // Update the checkbox state
                         const checkbox = checkboxMap.get(val.toString());
-                        if (checkbox) {
-                            checkbox.checked = false;
-                        }
+                        if (checkbox) checkbox.checked = false;
                         updateDisplay();
                     });
 
@@ -130,7 +191,7 @@
                     clearAllButton.addEventListener('click', (e) => {
                         e.stopPropagation();
                         selectedValues.clear();
-                        checkboxMap.forEach(checkbox => checkbox.checked = false);
+                        checkboxMap.forEach(cb => cb.checked = false);
                         updateDisplay();
                     });
                     tagContainer.appendChild(clearAllButton);
@@ -138,17 +199,13 @@
             }
         };
 
-        // Function to close dropdown
         const closeDropdown = () => {
-            selectedContainer.focus(); // Return focus to trigger
-            if (itemsContainer) {
-                itemsContainer.remove();
-                itemsContainer = null;
-            }
-            if (dropdownOverlay) {
-                dropdownOverlay.remove();
-                dropdownOverlay = null;
-            }
+            selectedContainer.focus();
+            _cancelInfiniteObserver();
+            if (activeRequest) { activeRequest.abort(); activeRequest = null; }
+            if (debounceTimer)  { clearTimeout(debounceTimer); debounceTimer = null; }
+            if (itemsContainer) { itemsContainer.remove(); itemsContainer = null; }
+            if (dropdownOverlay){ dropdownOverlay.remove(); dropdownOverlay = null; }
             if (customSelect._cleanupHandlers) {
                 customSelect._cleanupHandlers();
                 customSelect._cleanupHandlers = null;
@@ -156,27 +213,25 @@
             customSelect.setAttribute('aria-expanded', 'false');
         };
 
-        // Function to position dropdown
         const positionDropdown = () => {
             if (!itemsContainer) return;
 
-            const rect = selectedContainer.getBoundingClientRect();
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+            const rect       = selectedContainer.getBoundingClientRect();
+            const scrollTop  = window.pageYOffset  || document.documentElement.scrollTop;
+            const scrollLeft = window.pageXOffset  || document.documentElement.scrollLeft;
 
-            let left = rect.left + scrollLeft;
-            let top = rect.bottom + scrollTop + 4; // 4px gap
+            let left = rect.left  + scrollLeft;
+            let top  = rect.bottom + scrollTop + 4;
 
             itemsContainer.style.position = 'absolute';
-            itemsContainer.style.left = `${left}px`;
-            itemsContainer.style.top = `${top}px`;
-            itemsContainer.style.width = `${rect.width}px`;
+            itemsContainer.style.left     = `${left}px`;
+            itemsContainer.style.top      = `${top}px`;
+            itemsContainer.style.width    = `${rect.width}px`;
             itemsContainer.style.minWidth = `${rect.width}px`;
             itemsContainer.style.boxSizing = 'border-box';
-            itemsContainer.style.zIndex = '10000';
+            itemsContainer.style.zIndex   = '10000';
 
-            // Adjust horizontal position if needed
-            const dropdownRect = itemsContainer.getBoundingClientRect();
+            const dropdownRect  = itemsContainer.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
             if (dropdownRect.right > viewportWidth) {
                 left = Math.max(10, viewportWidth - dropdownRect.width - 10);
@@ -203,29 +258,29 @@
                 });
                 selectedText.appendChild(removeButton);
                 selectedText.style.display = 'inline-block';
-                selectedText.style.width = 'calc(100% - 4px)';
+                selectedText.style.width   = 'calc(100% - 4px)';
             }
 
             tagContainer.appendChild(selectedText);
         }
 
+        // ── Local search filter (non-AJAX mode) ──────────────────────────────────
         function updateVisibility() {
             if (!itemsContainer) return;
             
             const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
 
-            // Filter optgroups
             Array.from(itemsContainer.querySelectorAll('.snap-select-optgroup')).forEach(group => {
                 let hasVisibleOption = false;
 
                 Array.from(group.querySelectorAll('.snap-select-item')).forEach(item => {
                     const keywords = item.dataset.key ? item.dataset.key.toLowerCase() : '';
-                    const label = item.querySelector('.snap-select-label');
-                    const text = label ? label.textContent.toLowerCase() : '';
+                    const label    = item.querySelector('.snap-select-label');
+                    const text     = label ? label.textContent.toLowerCase() : '';
 
                     if (text.includes(searchTerm) || keywords.includes(searchTerm)) {
                         item.style.display = '';
-                        hasVisibleOption = true;
+                        hasVisibleOption   = true;
                     } else {
                         item.style.display = 'none';
                     }
@@ -239,13 +294,12 @@
                 }
             });
 
-            // Filter standalone options
             Array.from(itemsContainer.querySelectorAll('.snap-select-item')).forEach(item => {
-                if (item.closest('.snap-select-optgroup')) return; // Skip grouped items
+                if (item.closest('.snap-select-optgroup')) return;
                 
                 const keywords = item.dataset.key ? item.dataset.key.toLowerCase() : '';
-                const label = item.querySelector('.snap-select-label');
-                const text = label ? label.textContent.toLowerCase() : '';
+                const label    = item.querySelector('.snap-select-label');
+                const text     = label ? label.textContent.toLowerCase() : '';
 
                 if (text.includes(searchTerm) || keywords.includes(searchTerm)) {
                     item.style.display = '';
@@ -255,20 +309,283 @@
             });
         }
 
+        // ── AJAX helpers ─────────────────────────────────────────────────────────
+
+        /**
+         * Build the fetch URL + init object for the current search/page.
+         */
+        function _buildFetchParams(search, page) {
+            const ajaxCfg = config.ajax;
+            const url     = typeof ajaxCfg.url === 'function'
+                ? ajaxCfg.url(search, page)
+                : ajaxCfg.url;
+
+            let extraData = {};
+            if (typeof ajaxCfg.data === 'function') {
+                extraData = ajaxCfg.data(search, page) || {};
+            } else if (ajaxCfg.data && typeof ajaxCfg.data === 'object') {
+                extraData = ajaxCfg.data;
+            }
+
+            const params = Object.assign({
+                q:        search,
+                page:     page,
+                pageSize: config.pageSize
+            }, extraData);
+
+            const method  = (ajaxCfg.method || 'GET').toUpperCase();
+            const headers = Object.assign({ 'Content-Type': 'application/json' }, ajaxCfg.headers || {});
+
+            let fetchUrl  = url;
+            let fetchInit = { method, headers };
+
+            if (method === 'GET') {
+                const qs = new URLSearchParams(params).toString();
+                fetchUrl  = qs ? `${url}${url.includes('?') ? '&' : '?'}${qs}` : url;
+            } else {
+                fetchInit.body = JSON.stringify(params);
+            }
+
+            return { fetchUrl, fetchInit };
+        }
+
+        /**
+         * Cache key for a given search + page combination.
+         */
+        function _cacheKey(search, page) {
+            return `${search}__p${page}`;
+        }
+
+        /**
+         * Show the loading spinner inside the dropdown.
+         */
+        function _showLoading(append) {
+            if (!itemsContainer) return;
+            if (!append) {
+                // Remove existing items but keep search bar
+                Array.from(itemsContainer.querySelectorAll(
+                    '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor'
+                )).forEach(el => el.remove());
+            }
+            if (!loadingIndicator) {
+                loadingIndicator = document.createElement('div');
+                loadingIndicator.classList.add('snap-select-loading');
+                loadingIndicator.textContent = config.loadingText;
+            }
+            itemsContainer.appendChild(loadingIndicator);
+        }
+
+        /**
+         * Remove the loading spinner.
+         */
+        function _hideLoading() {
+            if (loadingIndicator && loadingIndicator.parentNode) {
+                loadingIndicator.remove();
+            }
+        }
+
+        /**
+         * Show a status message (no results / error).
+         */
+        function _showMessage(text, cssClass) {
+            if (!itemsContainer) return;
+            _hideLoading();
+            const msg = document.createElement('div');
+            msg.classList.add('snap-select-no-results', cssClass);
+            msg.textContent = text;
+            itemsContainer.appendChild(msg);
+        }
+
+        /**
+         * Append fetched results as option items.
+         * Also adds matching <option> nodes to the real <select> so the value is
+         * accessible via select.value / form submission.
+         */
+        function _appendResults(results) {
+            if (!itemsContainer) return;
+            _hideLoading();
+            _cancelInfiniteObserver();
+
+            results.forEach(item => {
+                // Sync to real <select>
+                if (!select.querySelector(`option[value="${item.id}"]`)) {
+                    const opt = document.createElement('option');
+                    opt.value       = item.id;
+                    opt.textContent = item.text;
+                    select.appendChild(opt);
+                }
+
+                const div = createOptionItem(select.querySelector(`option[value="${item.id}"]`));
+                itemsContainer.appendChild(div);
+            });
+
+            // Infinite scroll sentinel
+            if (hasMorePages) {
+                _attachInfiniteSentinel();
+            }
+        }
+
+        /**
+         * Attach an IntersectionObserver sentinel at the bottom of the list.
+         * When it enters the viewport the next page is loaded.
+         */
+        function _attachInfiniteSentinel() {
+            if (!itemsContainer) return;
+            infiniteAnchor = document.createElement('div');
+            infiniteAnchor.classList.add('snap-select-infinite-anchor');
+            infiniteAnchor.style.height  = '1px';
+            infiniteAnchor.style.width   = '100%';
+            itemsContainer.appendChild(infiniteAnchor);
+
+            infiniteObserver = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && hasMorePages && !isLoadingAjax) {
+                    _fetchPage(currentSearch, currentPage + 1, true);
+                }
+            }, { root: itemsContainer, threshold: 0.1 });
+
+            infiniteObserver.observe(infiniteAnchor);
+        }
+
+        function _cancelInfiniteObserver() {
+            if (infiniteObserver) {
+                infiniteObserver.disconnect();
+                infiniteObserver = null;
+            }
+            if (infiniteAnchor && infiniteAnchor.parentNode) {
+                infiniteAnchor.remove();
+                infiniteAnchor = null;
+            }
+        }
+
+        /**
+         * Core fetch function.
+         * @param {string}  search   - Current search term.
+         * @param {number}  page     - Page to fetch.
+         * @param {boolean} append   - Append to existing list (infinite scroll) vs replace.
+         */
+        function _fetchPage(search, page, append) {
+            if (isLoadingAjax) return;
+
+            const ajaxCfg = config.ajax;
+            const key     = _cacheKey(search, page);
+
+            // Serve from cache
+            if (ajaxCfg.cache && ajaxCache.has(key)) {
+                const cached = ajaxCache.get(key);
+                currentPage  = page;
+                hasMorePages = cached.hasMore;
+                if (!append) {
+                    // Clear items (keep search bar)
+                    Array.from(itemsContainer.querySelectorAll(
+                        '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor'
+                    )).forEach(el => el.remove());
+                }
+                if (cached.results.length === 0 && !append) {
+                    _showMessage(config.noResultsText, 'snap-select-no-results');
+                } else {
+                    _appendResults(cached.results);
+                }
+                return;
+            }
+
+            isLoadingAjax = true;
+            _showLoading(append);
+
+            // Cancel any in-flight request
+            if (activeRequest) activeRequest.abort();
+            activeRequest = new AbortController();
+
+            const { fetchUrl, fetchInit } = _buildFetchParams(search, page);
+            fetchInit.signal = activeRequest.signal;
+
+            fetch(fetchUrl, fetchInit)
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    isLoadingAjax = false;
+                    activeRequest = null;
+
+                    // Allow user to map the raw response
+                    let processed = { results: [], hasMore: false };
+                    if (typeof ajaxCfg.processResults === 'function') {
+                        processed = ajaxCfg.processResults(data, search, page) || processed;
+                    } else {
+                        // Default: expect { results:[{id,text},...], hasMore: bool }
+                        processed.results = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
+                        processed.hasMore = !!data.hasMore;
+                    }
+
+                    currentPage  = page;
+                    hasMorePages = !!processed.hasMore;
+
+                    // Cache the result
+                    if (ajaxCfg.cache) {
+                        ajaxCache.set(key, { results: processed.results, hasMore: hasMorePages });
+                    }
+
+                    if (!itemsContainer) return; // dropdown was closed mid-flight
+
+                    if (!append) {
+                        Array.from(itemsContainer.querySelectorAll(
+                            '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor'
+                        )).forEach(el => el.remove());
+                    }
+
+                    if (processed.results.length === 0 && !append) {
+                        _showMessage(config.noResultsText, 'snap-select-no-results');
+                    } else {
+                        _appendResults(processed.results);
+                    }
+                })
+                .catch(err => {
+                    if (err.name === 'AbortError') return;  // intentional abort
+                    isLoadingAjax = false;
+                    activeRequest = null;
+                    console.error('[SnapSelect] AJAX error:', err);
+                    if (itemsContainer) {
+                        _hideLoading();
+                        _showMessage(config.errorText, 'snap-select-error');
+                    }
+                });
+        }
+
+        /**
+         * Trigger a fresh AJAX search (resets to page 1).
+         */
+        function _triggerSearch(search) {
+            if (!config.ajax || !itemsContainer) return;
+            const minLen = config.ajax.minimumInputLength || 0;
+            if (search.length < minLen) {
+                Array.from(itemsContainer.querySelectorAll(
+                    '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor, .snap-select-loading'
+                )).forEach(el => el.remove());
+                return;
+            }
+            currentSearch = search;
+            currentPage   = 1;
+            hasMorePages  = false;
+            _cancelInfiniteObserver();
+            _fetchPage(search, 1, false);
+        }
+
+        // ── populateItems ────────────────────────────────────────────────────────
         function populateItems() {
             if (!itemsContainer) return;
             
-            itemsContainer.innerHTML = ''; // Clear previous items
-            checkboxMap.clear(); // Clear checkbox references
+            itemsContainer.innerHTML = '';
+            checkboxMap.clear();
 
-            if (config.liveSearch) {
+            // ── Search bar (always shown in AJAX mode or when liveSearch is true) ──
+            if (config.ajax || config.liveSearch) {
                 const searchWrapper = document.createElement('div');
                 searchWrapper.classList.add('snap-select-search-wrapper');
                 itemsContainer.appendChild(searchWrapper);
 
                 searchInput = document.createElement('input');
                 searchInput.classList.add('snap-select-search');
-                searchInput.setAttribute('placeholder', 'Search...');
+                searchInput.setAttribute('placeholder', config.ajax ? 'Search...' : 'Search...');
                 searchWrapper.appendChild(searchInput);
 
                 clearSearchButton = document.createElement('span');
@@ -278,16 +595,40 @@
                 clearSearchButton.addEventListener('click', () => {
                     searchInput.value = '';
                     clearSearchButton.style.display = 'none';
-                    updateVisibility();
+                    if (config.ajax) {
+                        _triggerSearch('');
+                    } else {
+                        updateVisibility();
+                    }
                 });
                 searchWrapper.appendChild(clearSearchButton);
 
                 searchInput.addEventListener('input', () => {
                     clearSearchButton.style.display = searchInput.value ? 'inline' : 'none';
-                    updateVisibility();
+                    if (config.ajax) {
+                        clearTimeout(debounceTimer);
+                        debounceTimer = setTimeout(() => {
+                            _triggerSearch(searchInput.value.trim());
+                        }, config.ajax.delay || 300);
+                    } else {
+                        updateVisibility();
+                    }
+                });
+
+                // Prevent dropdown from closing when typing
+                searchInput.addEventListener('keydown', (e) => {
+                    e.stopPropagation();
+                    if (e.key === 'Escape') closeDropdown();
                 });
             }
 
+            // ── AJAX mode: kick off initial load ─────────────────────────────────
+            if (config.ajax) {
+                _fetchPage('', 1, false);
+                return;
+            }
+
+            // ── Static mode ──────────────────────────────────────────────────────
             if (isMultiple && config.selectAllOption) {
                 const selectAllDiv = document.createElement('div');
                 selectAllDiv.classList.add('snap-select-item', 'snap-select-all');
@@ -304,15 +645,13 @@
                 
                 selectAllDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    let allSelected = selectedValues.size === select.options.length;
+                    const allSelected = selectedValues.size === select.options.length;
                     
                     if (allSelected) {
-                        // Deselect all
                         selectedValues.clear();
-                        checkboxMap.forEach(checkbox => checkbox.checked = false);
+                        checkboxMap.forEach(cb => cb.checked = false);
                         selectAllCheckbox.checked = false;
                     } else {
-                        // Select all (up to max)
                         Array.from(select.options).forEach(option => {
                             if (selectedValues.size < config.maxSelections) {
                                 selectedValues.add(option.value);
@@ -336,7 +675,7 @@
                     
                     const label = document.createElement('div');
                     label.classList.add('snap-select-optgroup-label');
-                    label.textContent = child.label;
+                    label.textContent    = child.label;
                     label.style.fontWeight = 'bold';
 
                     if (isMultiple && config.selectOptgroups) {
@@ -351,17 +690,14 @@
                                     addedCount++;
                                 }
                             });
-                            if (addedCount > 0) {
-                                updateDisplay();
-                            }
+                            if (addedCount > 0) updateDisplay();
                         });
                     }
 
                     group.appendChild(label);
 
                     Array.from(child.children).forEach(option => {
-                        const item = createOptionItem(option);
-                        group.appendChild(item);
+                        group.appendChild(createOptionItem(option));
                     });
 
                     itemsContainer.appendChild(group);
@@ -373,21 +709,20 @@
             });
         }
 
+        // ── createOptionItem ─────────────────────────────────────────────────────
         function createOptionItem(option) {
             const optionDiv = document.createElement('div');
             optionDiv.classList.add('snap-select-item');
             optionDiv.dataset.value = option.value;
-            optionDiv.dataset.key = option.dataset.key || '';
+            optionDiv.dataset.key   = option.dataset.key || '';
 
             if (isMultiple) {
-                // Create checkbox for multi-select
                 const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
+                checkbox.type  = 'checkbox';
                 checkbox.classList.add('snap-select-checkbox');
                 checkbox.checked = selectedValues.has(option.value);
                 optionDiv.appendChild(checkbox);
 
-                // Store checkbox reference
                 checkboxMap.set(option.value, checkbox);
 
                 const label = document.createElement('label');
@@ -395,10 +730,8 @@
                 label.textContent = option.textContent;
                 optionDiv.appendChild(label);
 
-                // Click anywhere on the option to toggle
                 optionDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    
                     if (selectedValues.has(option.value)) {
                         selectedValues.delete(option.value);
                         checkbox.checked = false;
@@ -408,11 +741,9 @@
                             checkbox.checked = true;
                         }
                     }
-                    
                     updateDisplay();
                 });
             } else {
-                // Single select - no checkbox
                 optionDiv.textContent = option.textContent;
                 
                 optionDiv.addEventListener('click', (e) => {
@@ -420,65 +751,57 @@
                     select.value = option.value;
                     updateSingleSelect(option.textContent);
                     select.dispatchEvent(new Event('change', { bubbles: true }));
-                    if (config.closeOnSelect) {
-                        closeDropdown();
-                    }
+                    if (config.closeOnSelect) closeDropdown();
                 });
             }
 
             return optionDiv;
         }
 
-        // Toggle dropdown
+        // ── Toggle dropdown ──────────────────────────────────────────────────────
         const toggleDropdown = (e) => {
             if (e) e.stopPropagation();
 
             if (itemsContainer) {
-                // Dropdown is open, close it
                 closeDropdown();
             } else {
                 // Close any other open snapselect dropdowns
                 document.querySelectorAll('.snap-select-items').forEach(dd => dd.remove());
                 document.querySelectorAll('.snap-select-overlay').forEach(ov => ov.remove());
 
-                // Create overlay
+                // Reset AJAX state for fresh open
+                if (config.ajax) {
+                    currentPage   = 1;
+                    currentSearch = '';
+                    hasMorePages  = false;
+                }
+
                 dropdownOverlay = document.createElement('div');
                 dropdownOverlay.classList.add('snap-select-overlay');
                 document.body.appendChild(dropdownOverlay);
 
-                // Create dropdown
                 itemsContainer = document.createElement('div');
                 itemsContainer.classList.add('snap-select-items');
                 itemsContainer.setAttribute('role', 'listbox');
-                if (isMultiple) {
-                    itemsContainer.setAttribute('aria-multiselectable', 'true');
-                }
+                if (isMultiple) itemsContainer.setAttribute('aria-multiselectable', 'true');
                 itemsContainer.setAttribute('tabindex', '-1');
                 itemsContainer.style.display = 'block';
                 document.body.appendChild(itemsContainer);
 
-                // Populate options
                 populateItems();
-
-                // Position dropdown
                 positionDropdown();
-
-                // Focus dropdown
                 itemsContainer.focus();
-
-                // Update ARIA
                 customSelect.setAttribute('aria-expanded', 'true');
 
-                // Add keyboard navigation for multi-select
+                // Keyboard navigation for multi-select
                 if (isMultiple) {
                     itemsContainer.addEventListener('keydown', (e) => {
                         if (e.key === 'Escape') {
                             closeDropdown();
                         } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                             e.preventDefault();
-                            // Navigate between checkboxes
-                            const checkboxes = Array.from(itemsContainer.querySelectorAll('.snap-select-checkbox'));
-                            const current = document.activeElement;
+                            const checkboxes  = Array.from(itemsContainer.querySelectorAll('.snap-select-checkbox'));
+                            const current     = document.activeElement;
                             const currentIndex = checkboxes.indexOf(current);
 
                             let nextIndex;
@@ -487,11 +810,9 @@
                             } else {
                                 nextIndex = currentIndex > 0 ? currentIndex - 1 : checkboxes.length - 1;
                             }
-
                             checkboxes[nextIndex].focus();
                         } else if (e.key === ' ' || e.key === 'Enter') {
                             e.preventDefault();
-                            // Toggle the focused checkbox
                             if (document.activeElement.classList.contains('snap-select-checkbox')) {
                                 document.activeElement.click();
                             }
@@ -499,30 +820,21 @@
                     });
                 }
 
-                // Handle clicks outside
                 dropdownOverlay.addEventListener('click', (event) => {
-                    if (event.target === dropdownOverlay) {
-                        closeDropdown();
-                    }
+                    if (event.target === dropdownOverlay) closeDropdown();
                 });
 
-                // Reposition on scroll/resize
-                const repositionHandler = () => positionDropdown();
+                const repositionHandler  = () => positionDropdown();
                 const scrollHandler = (e) => {
-                    if (itemsContainer && itemsContainer.contains(e.target)) {
-                        return; // Allow scrolling inside dropdown
-                    }
+                    if (itemsContainer && itemsContainer.contains(e.target)) return;
                     positionDropdown();
                 };
-                const selectedResizeObserver = new ResizeObserver(() => {
-                    positionDropdown();
-                });
+                const selectedResizeObserver = new ResizeObserver(() => positionDropdown());
                 
                 window.addEventListener('scroll', scrollHandler, true);
                 window.addEventListener('resize', repositionHandler);
                 selectedResizeObserver.observe(selectedContainer);
 
-                // Store cleanup function
                 customSelect._cleanupHandlers = () => {
                     window.removeEventListener('scroll', scrollHandler, true);
                     window.removeEventListener('resize', repositionHandler);
@@ -533,7 +845,6 @@
 
         selectedContainer.addEventListener('click', toggleDropdown);
 
-        // Keyboard support for opening
         selectedContainer.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -555,16 +866,14 @@
             });
         });
 
-        // Start observing once element is in the DOM
         setTimeout(() => {
             if (customSelect.parentNode) {
                 observer.observe(customSelect.parentNode, { childList: true, subtree: true });
             }
         }, 0);
 
-        // Initialize
+        // ── Initialise ───────────────────────────────────────────────────────────
         if (isMultiple) {
-            // Populate selectedValues from pre-selected options
             Array.from(select.selectedOptions).forEach(option => {
                 selectedValues.add(option.value);
             });
@@ -578,11 +887,11 @@
             }
         }
 
-        // Public clear method
+        // ── Public methods ───────────────────────────────────────────────────────
         this.clear = function() {
             if (isMultiple) {
                 selectedValues.clear();
-                checkboxMap.forEach(checkbox => checkbox.checked = false);
+                checkboxMap.forEach(cb => cb.checked = false);
                 updateDisplay();
             } else {
                 select.value = '';
@@ -590,24 +899,32 @@
                 select.dispatchEvent(new Event('change', { bubbles: true }));
             }
         };
+
+        /** Manually refresh/reload AJAX results (clears cache for current search). */
+        this.refresh = function() {
+            if (!config.ajax) return;
+            ajaxCache.delete(_cacheKey(currentSearch, currentPage));
+            if (itemsContainer) _triggerSearch(currentSearch);
+        };
+
+        /** Clear the AJAX response cache entirely. */
+        this.clearCache = function() {
+            ajaxCache.clear();
+        };
     }
 
-    // Create a wrapper function for backward compatibility
+    // ── Wrapper for backward-compatible selector-string usage ─────────────────
     window.SnapSelect = function(selector, options) {
-        const elements = document.querySelectorAll(selector);
+        const elements  = document.querySelectorAll(selector);
         const instances = [];
         elements.forEach(element => {
-            const instance = new SnapSelect(element, options);
-            instances.push(instance);
+            instances.push(new SnapSelect(element, options));
         });
-        // Return single instance or array of instances
         return instances.length === 1 ? instances[0] : instances;
     };
 
-    // Also expose the constructor directly on window for new usage
     window.SnapSelectClass = SnapSelect;
 
-    // Export SnapSelect for module environments (Node.js, Webpack, etc.)
     if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
         module.exports = SnapSelect;
     }
