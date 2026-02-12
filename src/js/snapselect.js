@@ -849,7 +849,7 @@
         selectedContainer.addEventListener('click', toggleDropdown);
 
         selectedContainer.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
                 e.preventDefault();
                 toggleDropdown();
             } else if (e.key === 'Escape' && itemsContainer) {

@@ -44,7 +44,8 @@
 /* Additional styles when the container is focused */
 .snap-select-selected:focus {
     border-color: inherit;
-    outline: 2px;
+    outline: 1px;
+    outline-style: solid;
     /*box-shadow: 0 0 0 .25rem rgba(13, 110, 253, .25);*/
 }
 
