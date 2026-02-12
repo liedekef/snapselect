@@ -8,6 +8,8 @@
    * Core Options:
    * - liveSearch (boolean): Enables search functionality within the dropdown.
    * - maxSelections (number): Limits the number of selections (for multiple select).
+   *   Alias: maxItems — both the option `maxItems` and the attribute `data-max-items` are
+   *   accepted and behave identically to maxSelections / data-max-selections.
    * - placeholder (string): Placeholder text for the select box.
    * - clearAllButton (boolean): Shows a button to clear all selections (for multiple select).
    * - selectOptgroups (boolean): Allows selecting all options within an optgroup.
@@ -60,7 +62,8 @@
         // Read options from data attributes
         const dataOptions = {
             liveSearch:      select.hasAttribute('data-live-search')      ? select.getAttribute('data-live-search') === 'true'       : undefined,
-            maxSelections:   select.hasAttribute('data-max-selections')   ? parseInt(select.getAttribute('data-max-selections'))     : undefined,
+            maxSelections:   select.hasAttribute('data-max-selections')   ? parseInt(select.getAttribute('data-max-selections'))     :
+                             select.hasAttribute('data-max-items')        ? parseInt(select.getAttribute('data-max-items'))          : undefined,
             placeholder:     select.hasAttribute('data-placeholder')      ? select.getAttribute('data-placeholder')                  : undefined,
             clearAllButton:  select.hasAttribute('data-clear-all-button') ? select.getAttribute('data-clear-all-button') === 'true'  : undefined,
             selectOptgroups: select.hasAttribute('data-select-optgroups') ? select.getAttribute('data-select-optgroups') === 'true'  : undefined,
@@ -72,7 +75,7 @@
         // Combine default options with user options
         const config = {
             liveSearch:      dataOptions.liveSearch      !== undefined ? dataOptions.liveSearch      : (options.liveSearch      !== undefined ? options.liveSearch      : false),
-            maxSelections:   dataOptions.maxSelections   !== undefined ? dataOptions.maxSelections   : (options.maxSelections   !== undefined ? options.maxSelections   : Infinity),
+            maxSelections:   dataOptions.maxSelections   !== undefined ? dataOptions.maxSelections   : (options.maxSelections   !== undefined ? options.maxSelections   : (options.maxItems !== undefined ? options.maxItems : Infinity)),
             placeholder:     dataOptions.placeholder     !== undefined ? dataOptions.placeholder     : (options.placeholder     !== undefined ? options.placeholder     : 'Select...'),
             clearAllButton:  dataOptions.clearAllButton  !== undefined ? dataOptions.clearAllButton  : (options.clearAllButton  !== undefined ? options.clearAllButton  : false),
             selectOptgroups: dataOptions.selectOptgroups !== undefined ? dataOptions.selectOptgroups : (options.selectOptgroups !== undefined ? options.selectOptgroups : false),
