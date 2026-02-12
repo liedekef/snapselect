@@ -161,6 +161,17 @@
 
             select.dispatchEvent(new Event('change', { bubbles: true }));
 
+            if (select.required) {
+                if (selectedValues.size === 0) {
+                    // keep invalid state if it was already marked (e.g. after a failed submit),
+                    // but don't add it proactively until the form has been submitted once
+                } else {
+                    selectedContainer.classList.remove('snap-select-invalid');
+                    const msg = customSelect.nextElementSibling;
+                    if (msg && msg.classList.contains('snap-select-validation-message')) msg.remove();
+                }
+            }
+
             if (selectedValues.size === 0) {
                 const placeholder = document.createElement('div');
                 placeholder.classList.add('snap-select-placeholder');
@@ -756,6 +767,9 @@
                     e.stopPropagation();
                     select.value = option.value;
                     updateSingleSelect(option.textContent);
+                    selectedContainer.classList.remove('snap-select-invalid');
+                    const msg = customSelect.nextElementSibling;
+                    if (msg && msg.classList.contains('snap-select-validation-message')) msg.remove();
                     select.dispatchEvent(new Event('change', { bubbles: true }));
                     if (config.closeOnSelect) closeDropdown();
                 });
@@ -891,6 +905,20 @@
             } else {
                 updateSingleSelect(config.placeholder, true);
             }
+        }
+
+        // ── Form validation ──────────────────────────────────────────────────────
+        if (select.required) {
+            select.addEventListener('invalid', (e) => {
+                e.preventDefault(); // suppress the native browser tooltip (field is hidden)
+                selectedContainer.classList.add('snap-select-invalid');
+                if (!customSelect.nextElementSibling?.classList.contains('snap-select-validation-message')) {
+                    const msg = document.createElement('div');
+                    msg.classList.add('snap-select-validation-message');
+                    msg.textContent = select.validationMessage; // uses the browser's own text
+                    customSelect.insertAdjacentElement('afterend', msg);
+                }
+            });
         }
 
         // ── Public methods ───────────────────────────────────────────────────────

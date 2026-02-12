@@ -270,3 +270,13 @@
     height: 1px;
     width: 100%;
 }
+
+.snap-select-selected.snap-select-invalid {
+    border-color: red;
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.2);
+}
+.snap-select-validation-message {
+    color: red;
+    font-size: 0.85em;
+    font-weight: 600;
+}
