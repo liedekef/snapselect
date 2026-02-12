@@ -917,6 +917,13 @@
                     msg.classList.add('snap-select-validation-message');
                     msg.textContent = select.validationMessage; // uses the browser's own text
                     customSelect.insertAdjacentElement('afterend', msg);
+                    requestAnimationFrame(() => {
+                        const offsetTop = msg.getBoundingClientRect().top + window.pageYOffset;
+                        window.scrollTo({
+                            top: offsetTop - window.innerHeight / 2 + msg.offsetHeight / 2,
+                            behavior: 'smooth'
+                        });
+                    });
                 }
             });
         }
