@@ -245,13 +245,13 @@
             }
         };
 
-        function updateSingleSelect(text) {
+        function updateSingleSelect(text, noAllowEmpty=false) {
             tagContainer.innerHTML = '';
             const selectedText = document.createElement('div');
             selectedText.classList.add('snap-select-single-selected-text');
             selectedText.textContent = text;
 
-            if (config.allowEmpty) {
+            if (config.allowEmpty && !noAllowEmpty) {
                 const removeButton = document.createElement('span');
                 removeButton.classList.add('snap-select-clear-all');
                 removeButton.textContent = '×';
@@ -259,12 +259,12 @@
                 removeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     select.value = '';
-                    updateSingleSelect(config.placeholder);
+                    updateSingleSelect(config.placeholder,true);
                     select.dispatchEvent(new Event('change', { bubbles: true }));
                 });
                 selectedText.appendChild(removeButton);
                 selectedText.style.display = 'inline-block';
-                selectedText.style.width   = 'calc(100% - 4px)';
+                selectedText.style.width   = '100%';
             }
 
             tagContainer.appendChild(selectedText);
@@ -889,7 +889,7 @@
             if (selectedOption) {
                 updateSingleSelect(selectedOption.textContent);
             } else {
-                updateSingleSelect(config.placeholder);
+                updateSingleSelect(config.placeholder, true);
             }
         }
 
@@ -901,7 +901,7 @@
                 updateDisplay();
             } else {
                 select.value = '';
-                updateSingleSelect(config.placeholder);
+                updateSingleSelect(config.placeholder, true);
                 select.dispatchEvent(new Event('change', { bubbles: true }));
             }
         };
