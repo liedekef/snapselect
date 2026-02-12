@@ -121,6 +121,9 @@
         customSelect.setAttribute('role', 'combobox');
         customSelect.setAttribute('aria-expanded', 'false');
         customSelect.setAttribute('aria-haspopup', 'listbox');
+        customSelect.style.width = select.width;
+        customSelect.style.minWidth = select.minWidth;
+
         select.parentNode.insertBefore(customSelect, select);
         customSelect.appendChild(select);
         
@@ -226,7 +229,7 @@
             itemsContainer.style.position = 'absolute';
             itemsContainer.style.left     = `${left}px`;
             itemsContainer.style.top      = `${top}px`;
-            itemsContainer.style.width    = `${rect.width}px`;
+            itemsContainer.style.width    = `fit-content`;
             itemsContainer.style.minWidth = `${rect.width}px`;
             itemsContainer.style.boxSizing = 'border-box';
             itemsContainer.style.zIndex   = '10000';
