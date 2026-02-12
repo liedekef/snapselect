@@ -224,7 +224,7 @@
             const scrollLeft = window.pageXOffset  || document.documentElement.scrollLeft;
 
             let left = rect.left  + scrollLeft;
-            let top  = rect.bottom + scrollTop + 4;
+            let top  = rect.bottom + scrollTop;
 
             itemsContainer.style.position = 'absolute';
             itemsContainer.style.left     = `${left}px`;
