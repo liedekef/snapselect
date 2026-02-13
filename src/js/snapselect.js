@@ -794,6 +794,11 @@
                 document.querySelectorAll('.snap-select-items').forEach(dd => dd.remove());
                 document.querySelectorAll('.snap-select-overlay').forEach(ov => ov.remove());
 
+                // empty select? We stop here
+                if (!select.children.length) {
+                    return;
+                }
+
                 // Reset AJAX state for fresh open
                 if (config.ajax) {
                     currentPage   = 1;
@@ -908,10 +913,10 @@
             if (selectedOption) {
                 updateSingleSelect(selectedOption.textContent);
             } else if ((config.allowEmpty || !select.value)) {
-                if (!config.placeholder)
+                if (!config.placeholder && select.options[0])
                     config.placeholder = select.options[0].textContent;
                 updateSingleSelect(config.placeholder, true);
-            } else {
+            } else if (select.options[0]) {
                 updateSingleSelect(select.options[0].textContent);
             }
         }
