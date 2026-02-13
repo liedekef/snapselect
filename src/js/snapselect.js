@@ -27,7 +27,7 @@
    *     - minimumInputLength (number): Minimum characters before fetching, default 0.
    *     - cache (boolean): Cache results per (search+page) key, default true.
    *     - headers (object): Extra request headers.
-   * - pageSize (number): Items per page when using AJAX (informational, sent to server), default 20.
+   * - pagesize (number): Items per page when using AJAX (informational, sent to server), default 20.
    * - loadingText (string): Text shown while loading, default 'Loading...'.
    * - noResultsText (string): Text shown when no results found, default 'No results found'.
    * - errorText (string): Text shown on fetch error, default 'Error loading results'.
@@ -85,7 +85,7 @@
 
             // AJAX options
             ajax:            options.ajax   || null,
-            pageSize:        options.pageSize        !== undefined ? options.pageSize        : 20,
+            pagesize:        options.pagesize        !== undefined ? options.pagesize        : 20,
             loadingText:     options.loadingText     !== undefined ? options.loadingText     : 'Loading...',
             noResultsText:   options.noResultsText   !== undefined ? options.noResultsText   : 'No results found',
             errorText:       options.errorText       !== undefined ? options.errorText       : 'Error loading results'
@@ -347,7 +347,7 @@
             const params = Object.assign({
                 q:        search,
                 page:     page,
-                pageSize: config.pageSize
+                pagesize: config.pagesize
             }, extraData);
 
             const method  = (ajaxCfg.method || 'GET').toUpperCase();

@@ -171,10 +171,10 @@ Use the `ajax` option to load options from a remote endpoint. The select element
 </script>
 ```
 
-The server receives `q` (search term), `page`, and `pageSize` as query parameters on every request:
+The server receives `q` (search term), `page`, and `pagesize` as query parameters on every request:
 
 ```
-GET /api/users?q=john&page=1&pageSize=20
+GET /api/users?q=john&page=1&pagesize=20
 ```
 
 Expected response shape:
@@ -303,7 +303,7 @@ SnapSelect('#selectAjax', {
     -   `minimumInputLength` (number): Minimum number of characters required before fetching. Default: `0`.
     -   `cache` (boolean): Cache results per (search + page) key to avoid redundant requests. Default: `true`.
     -   `headers` (object): Extra HTTP headers to include in every request. Default: `{}`.
--   `pageSize` (number): Number of items per page sent to the server (informational). Default: `20`.
+-   `pagesize` (number): Number of items per page sent to the server (informational). Default: `20`.
 -   `loadingText` (string): Text shown in the dropdown while loading. Default: `'Loading...'`.
 -   `noResultsText` (string): Text shown when no results are returned. Default: `'No results found'`.
 -   `errorText` (string): Text shown when the request fails. Default: `'Error loading results'`.
