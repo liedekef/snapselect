@@ -794,8 +794,8 @@
                 document.querySelectorAll('.snap-select-items').forEach(dd => dd.remove());
                 document.querySelectorAll('.snap-select-overlay').forEach(ov => ov.remove());
 
-                // empty select? We stop here
-                if (!select.children.length) {
+                // empty select? We stop here (if not ajax)
+                if (!select.children.length && !config.ajax) {
                     return;
                 }
 
