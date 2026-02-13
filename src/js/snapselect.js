@@ -351,16 +351,18 @@
             }, extraData);
 
             const method  = (ajaxCfg.method || 'GET').toUpperCase();
-            const headers = Object.assign({ 'Content-Type': 'application/json' }, ajaxCfg.headers || {});
+            const headers = Object.assign({}, ajaxCfg.headers || {});
 
             let fetchUrl  = url;
             let fetchInit = { method, headers };
 
             if (method === 'GET') {
                 const qs = new URLSearchParams(params).toString();
-                fetchUrl  = qs ? `${url}${url.includes('?') ? '&' : '?'}${qs}` : url;
+                fetchUrl = qs ? `${url}${url.includes('?') ? '&' : '?'}${qs}` : url;
             } else {
-                fetchInit.body = JSON.stringify(params);
+                const formData = new FormData();
+                Object.entries(params).forEach(([key, value]) => formData.append(key, value));
+                fetchInit.body = formData;
             }
 
             return { fetchUrl, fetchInit };
