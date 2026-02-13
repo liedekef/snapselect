@@ -719,6 +719,11 @@
 
                     itemsContainer.appendChild(group);
                 } else if (child.tagName === 'OPTION') {
+                    // skip the option only if allowEmpty is set AND the option has no value AND
+                    //    no text — that's the "empty first option as a forcing trick" pattern,
+                    // then it's safe to drop from the dropdown since allowEmpty already provides
+                    //    the clear button for returning to an unselected state
+                    if ((config.allowEmpty||config.clearAllButton) && config.placeholder && child.value === '' && child.textContent.trim() === '') return;
                     const item = createOptionItem(child);
                     item.dataset.optgroup = '';
                     itemsContainer.appendChild(item);
