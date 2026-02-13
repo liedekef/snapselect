@@ -190,20 +190,38 @@ Expected response shape:
 
 ### AJAX — with extra parameters and POST
 
-Use the `data` function to append extra parameters, and `method` to switch to POST:
+Use `data` to pass extra parameters (as a plain object or a function), and `method` to switch to POST. For POST requests, parameters are sent as `multipart/form-data`, which is compatible with traditional server frameworks like WordPress:
 
 ```html
 <select id="selectAjaxPost" data-placeholder="Search products..."></select>
 
 <script>
+    // Plain object — same extra params on every request
+    SnapSelect('#selectAjaxPost', {
+        ajax: {
+            url: '/api/products/search',
+            method: 'POST',
+            data: {
+                category: 'electronics',
+                inStock: true
+            },
+            processResults: function(response) {
+                return {
+                    results: response.items,
+                    hasMore: response.hasNextPage
+                };
+            }
+        }
+    });
+
+    // Function — extra params can vary per search/page
     SnapSelect('#selectAjaxPost', {
         ajax: {
             url: '/api/products/search',
             method: 'POST',
             data: function(searchTerm, page) {
                 return {
-                    category: 'electronics',
-                    inStock: true
+                    category: document.getElementById('categoryFilter').value
                 };
             },
             processResults: function(response) {
@@ -297,16 +315,16 @@ SnapSelect('#selectAjax', {
 -   `ajax` (object): Enables remote data loading. When set, the dropdown fetches options from a server instead of reading them from the HTML. Default: `null`.
     -   `url` (string|function): The endpoint URL, or a function `(searchTerm, page) => string` for dynamic URLs.
     -   `method` (string): HTTP method. Default: `'GET'`.
-    -   `data` (function): Optional. `(searchTerm, page) => object` returning extra parameters merged into every request.
+    -   `data` (object|function): Optional. A plain object of extra parameters, or a function `(searchTerm, page) => object`, merged into every request.
     -   `processResults` (function): **Required.** Maps the raw server response to `{ results: [{id, text}], hasMore: bool }`.
     -   `delay` (number): Debounce delay in ms before firing a search request. Default: `300`.
     -   `minimumInputLength` (number): Minimum number of characters required before fetching. Default: `0`.
     -   `cache` (boolean): Cache results per (search + page) key to avoid redundant requests. Default: `true`.
     -   `headers` (object): Extra HTTP headers to include in every request. Default: `{}`.
--   `pagesize` (number): Number of items per page sent to the server (informational). Default: `20`.
--   `loadingText` (string): Text shown in the dropdown while loading. Default: `'Loading...'`.
--   `noResultsText` (string): Text shown when no results are returned. Default: `'No results found'`.
--   `errorText` (string): Text shown when the request fails. Default: `'Error loading results'`.
+    -   `pagesize` (number): Number of items per page sent to the server. Default: `20`.
+    -   `loadingText` (string): Text shown in the dropdown while loading. Default: `'Loading...'`.
+    -   `noResultsText` (string): Text shown when no results are returned. Default: `'No results found'`.
+    -   `errorText` (string): Text shown when the request fails. Default: `'Error loading results'`.
 
 ## Public Methods
 

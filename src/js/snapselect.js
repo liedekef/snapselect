@@ -20,17 +20,17 @@
    * AJAX + Paging Options:
    * - ajax (object): Enables remote data loading.
    *     - url (string|function): Endpoint URL, or a function(searchTerm, page) => string.
-   *     - data (function): Optional. function(searchTerm, page) => object of extra params.
+   *     - data (object|function): Optional. Plain object or function(searchTerm, page) => object of extra params.
    *     - method (string): HTTP method, default 'GET'.
    *     - processResults (function): Maps the raw response to { results: [{id, text}], hasMore: bool }.
    *     - delay (number): Debounce delay in ms for search input, default 300.
    *     - minimumInputLength (number): Minimum characters before fetching, default 0.
    *     - cache (boolean): Cache results per (search+page) key, default true.
    *     - headers (object): Extra request headers.
-   * - pagesize (number): Items per page when using AJAX (informational, sent to server), default 20.
-   * - loadingText (string): Text shown while loading, default 'Loading...'.
-   * - noResultsText (string): Text shown when no results found, default 'No results found'.
-   * - errorText (string): Text shown on fetch error, default 'Error loading results'.
+   *     - pagesize (number): Items per page sent to the server, default 20.
+   *     - loadingText (string): Text shown while loading, default 'Loading...'.
+   *     - noResultsText (string): Text shown when no results found, default 'No results found'.
+   *     - errorText (string): Text shown on fetch error, default 'Error loading results'.
    *
    * Country → State cascade example:
    *
@@ -85,10 +85,6 @@
 
             // AJAX options
             ajax:            options.ajax   || null,
-            pagesize:        options.pagesize        !== undefined ? options.pagesize        : 20,
-            loadingText:     options.loadingText     !== undefined ? options.loadingText     : 'Loading...',
-            noResultsText:   options.noResultsText   !== undefined ? options.noResultsText   : 'No results found',
-            errorText:       options.errorText       !== undefined ? options.errorText       : 'Error loading results'
         };
 
         // Normalise ajax sub-options
@@ -100,7 +96,11 @@
                 cache:              true,
                 headers:            {},
                 data:               null,
-                processResults:     null
+                processResults:     null,
+                pagesize:           20,
+                loadingText:        'Loading...',
+                noResultsText:      'No results found',
+                errorText:          'Error loading results'
             }, config.ajax);
         }
 
@@ -347,7 +347,7 @@
             const params = Object.assign({
                 q:        search,
                 page:     page,
-                pagesize: config.pagesize
+                pagesize: config.ajax.pagesize
             }, extraData);
 
             const method  = (ajaxCfg.method || 'GET').toUpperCase();
@@ -389,7 +389,7 @@
             if (!loadingIndicator) {
                 loadingIndicator = document.createElement('div');
                 loadingIndicator.classList.add('snap-select-loading');
-                loadingIndicator.textContent = config.loadingText;
+                loadingIndicator.textContent = config.ajax.loadingText;
             }
             itemsContainer.appendChild(loadingIndicator);
         }
@@ -500,7 +500,7 @@
                     )).forEach(el => el.remove());
                 }
                 if (cached.results.length === 0 && !append) {
-                    _showMessage(config.noResultsText, 'snap-select-no-results');
+                    _showMessage(config.ajax.noResultsText, 'snap-select-no-results');
                 } else {
                     _appendResults(cached.results);
                 }
@@ -553,7 +553,7 @@
                     }
 
                     if (processed.results.length === 0 && !append) {
-                        _showMessage(config.noResultsText, 'snap-select-no-results');
+                        _showMessage(config.ajax.noResultsText, 'snap-select-no-results');
                     } else {
                         _appendResults(processed.results);
                     }
@@ -565,7 +565,7 @@
                     console.error('[SnapSelect] AJAX error:', err);
                     if (itemsContainer) {
                         _hideLoading();
-                        _showMessage(config.errorText, 'snap-select-error');
+                        _showMessage(config.ajax.errorText, 'snap-select-error');
                     }
                 });
         }
