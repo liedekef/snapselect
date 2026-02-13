@@ -902,7 +902,9 @@
             const selectedOption = select.querySelector('option[selected]');
             if (selectedOption) {
                 updateSingleSelect(selectedOption.textContent);
-            } else if ((config.allowEmpty || !select.value) && config.placeholder) {
+            } else if ((config.allowEmpty || !select.value)) {
+                if (!config.placeholder)
+                    config.placeholder = select.options[0].textContent;
                 updateSingleSelect(config.placeholder, true);
             } else {
                 updateSingleSelect(select.options[0].textContent);
