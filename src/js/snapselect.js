@@ -899,11 +899,13 @@
             });
             updateDisplay();
         } else {
-            const selectedOption = select.querySelector('option:checked');
+            const selectedOption = select.querySelector('option[selected]');
             if (selectedOption) {
                 updateSingleSelect(selectedOption.textContent);
-            } else {
+            } else if ((config.allowEmpty || !select.value) && config.placeholder) {
                 updateSingleSelect(config.placeholder, true);
+            } else {
+                updateSingleSelect(select.options[0].textContent);
             }
         }
 
