@@ -319,7 +319,7 @@ SnapSelect('#selectAjax', {
     -   `processResults` (function): **Required.** Maps the raw server response to `{ results: [{id, text}], hasMore: bool }`.
     -   `delay` (number): Debounce delay in ms before firing a search request. Default: `300`.
     -   `minimumInputLength` (number): Minimum number of characters required before fetching. Default: `0`.
-    -   `cache` (boolean): Cache results per (search + page) key to avoid redundant requests. Default: `true`. Always false if `url` or `data` is a function.
+    -   `cache` (boolean): Cache results per (search + page) key to avoid redundant requests. Default: `false` if `url` or `data` is a function, `true` otherwise.
     -   `headers` (object): Extra HTTP headers to include in every request. Default: `{}`.
     -   `pagesize` (number): Number of items per page sent to the server. Default: `20`.
     -   `loadingText` (string): Text shown in the dropdown while loading. Default: `'Loading...'`.

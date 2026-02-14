@@ -93,7 +93,7 @@
                 method:             'GET',
                 delay:              300,
                 minimumInputLength: 0,
-                cache:              true,
+                cache:              (typeof config.ajax.url === 'function' || typeof config.ajax.data === 'function')? false : true,
                 headers:            {},
                 data:               null,
                 processResults:     null,
@@ -102,9 +102,6 @@
                 noResultsText:      'No results found',
                 errorText:          'Error loading results'
             }, config.ajax);
-            if (typeof config.ajax.url === 'function' || typeof config.ajax.data === 'function') {
-                config.ajax.cache = false;
-            }
         }
 
         // ── AJAX state ────────────────────────────────────────────────────────────
