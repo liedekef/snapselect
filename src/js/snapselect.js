@@ -16,6 +16,8 @@
    * - selectAllOption (boolean): Adds a "Select All" option to the dropdown (for multiple select).
    * - closeOnSelect (boolean): Closes the dropdown after selecting an option (single-select only).
    * - allowEmpty (boolean): Allows deselection of a selected option (for single select).
+   * - onItemAdd (function): Called when an item is selected. Receives (value, text).
+   * - onItemDelete (function): Called when an item is deselected. Receives (value, text).
    *
    * AJAX + Paging Options:
    * - ajax (object): Enables remote data loading.
@@ -85,6 +87,10 @@
 
             // AJAX options
             ajax:            options.ajax   || null,
+
+            // Callbacks
+            onItemAdd:    typeof options.onItemAdd    === 'function' ? options.onItemAdd    : null,
+            onItemDelete: typeof options.onItemDelete === 'function' ? options.onItemDelete : null,
         };
 
         // Normalise ajax sub-options
@@ -194,6 +200,7 @@
                         selectedValues.delete(val);
                         const checkbox = checkboxMap.get(val.toString());
                         if (checkbox) checkbox.checked = false;
+                        if (config.onItemDelete) config.onItemDelete.call(select, val, option.textContent);
                         updateDisplay();
                     });
 
@@ -269,8 +276,13 @@
                 removeButton.style.float = 'right';
                 removeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    const prevValue = select.value;
+                    const prevOption = select.querySelector(`option[value="${prevValue}"]`);
                     select.value = '';
                     updateSingleSelect(config.placeholder,true);
+                    if (config.onItemDelete && prevValue) {
+                        config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
+                    }
                     select.dispatchEvent(new Event('change', { bubbles: true }));
                 });
                 selectedText.appendChild(removeButton);
@@ -759,10 +771,12 @@
                     if (selectedValues.has(option.value)) {
                         selectedValues.delete(option.value);
                         checkbox.checked = false;
+                        if (config.onItemDelete) config.onItemDelete.call(select, option.value, option.textContent);
                     } else {
                         if (selectedValues.size < config.maxSelections) {
                             selectedValues.add(option.value);
                             checkbox.checked = true;
+                            if (config.onItemAdd) config.onItemAdd.call(select, option.value, option.textContent);
                         }
                     }
                     updateDisplay();
@@ -772,11 +786,17 @@
                 
                 optionDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    const prevValue = select.value;
                     select.value = option.value;
                     updateSingleSelect(option.textContent);
                     selectedContainer.classList.remove('snap-select-invalid');
                     const msg = customSelect.nextElementSibling;
                     if (msg && msg.classList.contains('snap-select-validation-message')) msg.remove();
+                    if (config.onItemAdd) config.onItemAdd.call(select, option.value, option.textContent);
+                    if (config.onItemDelete && prevValue && prevValue !== option.value) {
+                        const prevOption = select.querySelector(`option[value="${prevValue}"]`);
+                        config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
+                    }
                     select.dispatchEvent(new Event('change', { bubbles: true }));
                     if (config.closeOnSelect) closeDropdown();
                 });

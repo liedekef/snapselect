@@ -22,6 +22,7 @@
 - **Customizable Placeholder:** Define custom placeholder text for an empty selection.
 - **Custom Search Keywords:** Enhance search functionality with custom keywords for each option.
 - **Bootstrap-Inspired Design:** Styled to seamlessly integrate with Bootstrap 5, but easily customizable to match any design system.
+- **Callbacks:** `onItemAdd` and `onItemDelete` hooks for reacting to individual selection changes.
 - **Accessible:** Built with accessibility in mind, ensuring a better experience for all users.
 - **Lightweight:** Minimal footprint, optimized for performance.
 
@@ -309,6 +310,28 @@ SnapSelect('#selectAjax', {
 -   `selectAllOption` (boolean): Add a "Select All" option for multi-select. Default: `false`.
 -   `closeOnSelect` (boolean): Close the dropdown after each selection (single-select only). Default: `true`.
 -   `allowEmpty` (boolean): Allow deselecting the current value (for single select). Default: `false`.
+
+### Callbacks
+
+-   `onItemAdd` (function): Called whenever an item is selected. Receives `(value, text)` — the option's `value` attribute and its visible label text. Fired for both single and multi-select. Inside the callback, `this` refers to the underlying `<select>` element.
+-   `onItemDelete` (function): Called whenever an item is deselected. Receives `(value, text)`. In multi-select mode this fires per individual item removed (whether via the tag × button or the dropdown checkbox). In single-select mode it also fires for the *previously selected* value when it is replaced by a new selection. Inside the callback, `this` refers to the underlying `<select>` element.
+
+```javascript
+SnapSelect('#mySelect', {
+    onItemAdd: function(value, text) {
+        // `this` is the <select> element
+        const form = this.closest('form');
+        console.log('Added:', value, text);
+    },
+    onItemDelete: function(value, text) {
+        // `this` is the <select> element
+        const form = this.closest('form');
+        console.log('Removed:', value, text);
+    }
+});
+```
+
+Both callbacks work in static and AJAX modes and are independent of the native `change` event — each receives exactly the one value that changed, making them more precise than listening to `change` directly on the underlying `<select>`.
 
 ### AJAX options
 
