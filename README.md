@@ -336,10 +336,10 @@ Both callbacks work in static and AJAX modes and are independent of the native `
 ### AJAX options
 
 -   `ajax` (object): Enables remote data loading. When set, the dropdown fetches options from a server instead of reading them from the HTML. Default: `null`.
-    -   `url` (string|function): The endpoint URL, or a function `(searchTerm, page) => string` for dynamic URLs.
+    -   `url` (string|function): The endpoint URL, or a function `(searchTerm, page) => string` for dynamic URLs. When a function, `this` refers to the underlying `<select>` element.
     -   `method` (string): HTTP method. Default: `'GET'`.
-    -   `data` (object|function): Optional. A plain object of extra parameters, or a function `(searchTerm, page) => object`, merged into every request.
-    -   `processResults` (function): **Required.** Maps the raw server response to `{ results: [{id, text}], hasMore: bool }`.
+    -   `data` (object|function): Optional. A plain object of extra parameters, or a function `(searchTerm, page) => object`, merged into every request. When a function, `this` refers to the underlying `<select>` element.
+    -   `processResults` (function): **Required.** Maps the raw server response to `{ results: [{id, text}], hasMore: bool }`. `this` refers to the underlying `<select>` element.
     -   `delay` (number): Debounce delay in ms before firing a search request. Default: `300`.
     -   `minimumInputLength` (number): Minimum number of characters required before fetching. Default: `0`.
     -   `cache` (boolean): Cache results per (search + page) key to avoid redundant requests. Default: `false` if `url` or `data` is a function, `true` otherwise.

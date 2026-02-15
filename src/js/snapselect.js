@@ -346,12 +346,12 @@
         function _buildFetchParams(search, page) {
             const ajaxCfg = config.ajax;
             const url     = typeof ajaxCfg.url === 'function'
-                ? ajaxCfg.url(search, page)
+                ? ajaxCfg.url.call(select, search, page)
                 : ajaxCfg.url;
 
             let extraData = {};
             if (typeof ajaxCfg.data === 'function') {
-                extraData = ajaxCfg.data(search, page) || {};
+                extraData = ajaxCfg.data.call(select, search, page) || {};
             } else if (ajaxCfg.data && typeof ajaxCfg.data === 'object') {
                 extraData = ajaxCfg.data;
             }
@@ -541,7 +541,7 @@
                     // Allow user to map the raw response
                     let processed = { results: [], hasMore: false };
                     if (typeof ajaxCfg.processResults === 'function') {
-                        processed = ajaxCfg.processResults(data, search, page) || processed;
+                        processed = ajaxCfg.processResults.call(select, data, search, page) || processed;
                     } else {
                         // Default: expect { results:[{id,text},...], hasMore: bool }
                         processed.results = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
@@ -941,6 +941,18 @@
             } else if (select.options[0]) {
                 updateSingleSelect(select.options[0].textContent);
             }
+        }
+
+        // ── Label wiring ─────────────────────────────────────────────────────────
+        // Labels pointing at the select's id would focus the hidden <select>.
+        // Intercept the click and focus/open the visible widget instead.
+        if (select.id) {
+            document.querySelectorAll(`label[for="${select.id}"]`).forEach(label => {
+                label.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    selectedContainer.focus();
+                });
+            });
         }
 
         // ── Form validation ──────────────────────────────────────────────────────
