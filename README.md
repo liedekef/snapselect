@@ -339,7 +339,7 @@ Both callbacks work in static and AJAX modes and are independent of the native `
     -   `url` (string|function): The endpoint URL, or a function `(searchTerm, page) => string` for dynamic URLs. When a function, `this` refers to the underlying `<select>` element.
     -   `method` (string): HTTP method. Default: `'GET'`.
     -   `data` (object|function): Optional. A plain object of extra parameters, or a function `(searchTerm, page) => object`, merged into every request. When a function, `this` refers to the underlying `<select>` element.
-    -   `processResults` (function): **Required.** Maps the raw server response to `{ results: [{id, text}], hasMore: bool }`. `this` refers to the underlying `<select>` element.
+    -   `processResults` (function): Optional. Maps the raw server response to `{ results: [{id, text, ...extras}], hasMore: bool }`. `this` refers to the underlying `<select>` element. If omitted, SnapSelect expects the response to be either a plain array or an object with a `results` array and a `hasMore` boolean. Any extra properties on each result item beyond `id` and `text` are stored as `data-*` attributes on the underlying `<option>` element, making them accessible in `onItemAdd`/`onItemDelete` via `this.querySelector(\`option[value="${value}"]\`).dataset`.
     -   `delay` (number): Debounce delay in ms before firing a search request. Default: `300`.
     -   `minimumInputLength` (number): Minimum number of characters required before fetching. Default: `0`.
     -   `cache` (boolean): Cache results per (search + page) key to avoid redundant requests. Default: `false` if `url` or `data` is a function, `true` otherwise.

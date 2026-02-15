@@ -24,7 +24,10 @@
    *     - url (string|function): Endpoint URL, or a function(searchTerm, page) => string.
    *     - data (object|function): Optional. Plain object or function(searchTerm, page) => object of extra params.
    *     - method (string): HTTP method, default 'GET'.
-   *     - processResults (function): Maps the raw response to { results: [{id, text}], hasMore: bool }.
+   *     - processResults (function): Maps the raw response to { results: [{id, text, ...extras}], hasMore: bool }.
+   *       Any properties beyond `id` and `text` are stored as data-* attributes on the underlying <option>
+   *       element, making them accessible in onItemAdd/onItemDelete via
+   *       this.querySelector(`option[value="${value}"]`).dataset.
    *     - delay (number): Debounce delay in ms for search input, default 300.
    *     - minimumInputLength (number): Minimum characters before fetching, default 0.
    *     - cache (boolean): Cache results per (search+page) key, default true.
@@ -443,6 +446,10 @@
                     const opt = document.createElement('option');
                     opt.value       = item.id;
                     opt.textContent = item.text;
+                    // Forward any extra properties (beyond id/text) as data-* attributes
+                    Object.entries(item).forEach(([key, val]) => {
+                        if (key !== 'id' && key !== 'text') opt.dataset[key] = val;
+                    });
                     select.appendChild(opt);
                 }
 
@@ -737,7 +744,7 @@
                     //    no text — that's the "empty first option as a forcing trick" pattern,
                     // then it's safe to drop from the dropdown since allowEmpty already provides
                     //    the clear button for returning to an unselected state
-                    if ((config.allowEmpty||config.clearAllButton) && config.placeholder && child.value === '' && child.textContent.trim() === '') return;
+                    if ((config.allowEmpty||config.clearAllButton) && child.value === '' && child.textContent.trim() === '') return;
                     const item = createOptionItem(child);
                     item.dataset.optgroup = '';
                     itemsContainer.appendChild(item);
