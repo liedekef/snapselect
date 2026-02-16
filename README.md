@@ -309,7 +309,7 @@ SnapSelect('#selectAjax', {
 -   `selectOptgroups` (boolean): Allow selecting/deselecting all options within an optgroup. Default: `false`.
 -   `selectAllOption` (boolean): Add a "Select All" option for multi-select. Default: `false`.
 -   `closeOnSelect` (boolean): Close the dropdown after each selection (single-select only). Default: `true`.
--   `allowEmpty` (boolean): Allow deselecting the current value (for single select). Default: `false`.
+-   `allowEmpty` (boolean): Allows deselection of a selected option (for single select). Defaults to true if the `<select>` is not required, false if it is.
 
 ### Callbacks
 

@@ -15,7 +15,7 @@
    * - selectOptgroups (boolean): Allows selecting all options within an optgroup.
    * - selectAllOption (boolean): Adds a "Select All" option to the dropdown (for multiple select).
    * - closeOnSelect (boolean): Closes the dropdown after selecting an option (single-select only).
-   * - allowEmpty (boolean): Allows deselection of a selected option (for single select).
+   * - allowEmpty (boolean): Allows deselection of a selected option (for single select). Defaults to true if the <select> is not required, false if it is.
    * - onItemAdd (function): Called when an item is selected. Receives (value, text).
    * - onItemDelete (function): Called when an item is deselected. Receives (value, text).
    *
@@ -63,6 +63,7 @@
     function SnapSelect(element, options = {}) {
         const select = element;
         const isMultiple = select.multiple;
+        const isRequired = select.required;
         
         // Read options from data attributes
         const dataOptions = {
@@ -86,7 +87,7 @@
             selectOptgroups: dataOptions.selectOptgroups !== undefined ? dataOptions.selectOptgroups : (options.selectOptgroups !== undefined ? options.selectOptgroups : false),
             selectAllOption: dataOptions.selectAllOption !== undefined ? dataOptions.selectAllOption : (options.selectAllOption !== undefined ? options.selectAllOption : false),
             closeOnSelect:   dataOptions.closeOnSelect   !== undefined ? dataOptions.closeOnSelect   : (options.closeOnSelect   !== undefined ? options.closeOnSelect   : true),
-            allowEmpty:      dataOptions.allowEmpty      !== undefined ? dataOptions.allowEmpty      : (options.allowEmpty      !== undefined ? options.allowEmpty      : false),
+            allowEmpty:      dataOptions.allowEmpty      !== undefined ? dataOptions.allowEmpty      : (options.allowEmpty      !== undefined ? options.allowEmpty      : !isRequired),
 
             // AJAX options
             ajax:            options.ajax   || null,
