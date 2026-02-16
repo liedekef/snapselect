@@ -784,7 +784,7 @@
                 label.classList.add('snap-select-label');
                 label.textContent = option.textContent;
                 optionDiv.appendChild(label);
-
+                optionDiv.setAttribute('tabindex', '-1');
                 optionDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (selectedValues.has(option.value)) {
@@ -865,56 +865,29 @@
                 itemsContainer.focus();
                 customSelect.setAttribute('aria-expanded', 'true');
 
-                // Keyboard navigation for multi-select
-                if (isMultiple) {
-                    itemsContainer.addEventListener('keydown', (e) => {
-                        if (e.key === 'Escape') {
-                            closeDropdown();
-                        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            const checkboxes  = Array.from(itemsContainer.querySelectorAll('.snap-select-checkbox'));
-                            const current     = document.activeElement;
-                            const currentIndex = checkboxes.indexOf(current);
-
-                            let nextIndex;
-                            if (e.key === 'ArrowDown') {
-                                nextIndex = currentIndex < checkboxes.length - 1 ? currentIndex + 1 : 0;
-                            } else {
-                                nextIndex = currentIndex > 0 ? currentIndex - 1 : checkboxes.length - 1;
-                            }
-                            checkboxes[nextIndex].focus();
-                        } else if (e.key === ' ' || e.key === 'Enter') {
-                            e.preventDefault();
-                            if (document.activeElement.classList.contains('snap-select-checkbox')) {
-                                document.activeElement.click();
-                            }
+                // Keyboard navigation
+                itemsContainer.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        closeDropdown();
+                    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const items       = Array.from(itemsContainer.querySelectorAll('.snap-select-item:not(.snap-select-item-disabled)'));
+                        const current     = document.activeElement;
+                        const currentIndex = items.indexOf(current);
+                        let nextIndex;
+                        if (e.key === 'ArrowDown') {
+                            nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+                        } else {
+                            nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
                         }
-                    });
-                } else {
-                    // Keyboard navigation for single-select
-                    itemsContainer.addEventListener('keydown', (e) => {
-                        if (e.key === 'Escape') {
-                            closeDropdown();
-                        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            const items       = Array.from(itemsContainer.querySelectorAll('.snap-select-item:not(.snap-select-item-disabled)'));
-                            const current     = document.activeElement;
-                            const currentIndex = items.indexOf(current);
-                            let nextIndex;
-                            if (e.key === 'ArrowDown') {
-                                nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
-                            } else {
-                                nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-                            }
-                            items[nextIndex].focus();
-                        } else if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            if (document.activeElement.classList.contains('snap-select-item')) {
-                                document.activeElement.click();
-                            }
+                        items[nextIndex].focus();
+                    } else if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (document.activeElement.classList.contains('snap-select-item')) {
+                            document.activeElement.click();
                         }
-                    });
-                }
+                    }
+                });
 
                 dropdownOverlay.addEventListener('click', (event) => {
                     if (event.target === dropdownOverlay) closeDropdown();
