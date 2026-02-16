@@ -257,6 +257,15 @@
             itemsContainer.style.minWidth = `${rect.width}px`;
             itemsContainer.style.boxSizing = 'border-box';
             itemsContainer.style.zIndex   = '10000';
+ 
+            // Flip above if the dropdown would overflow the viewport bottom and there's room above
+            const dropdownHeight  = itemsContainer.offsetHeight;
+            const spaceBelow      = window.innerHeight - rect.bottom;
+            const spaceAbove      = rect.top;
+            if (spaceBelow < dropdownHeight && spaceAbove >= dropdownHeight) {
+                top = rect.top + scrollTop - dropdownHeight;
+                itemsContainer.style.top = `${top}px`;
+            }
 
             const dropdownRect  = itemsContainer.getBoundingClientRect();
             const viewportWidth = window.innerWidth;

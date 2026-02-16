@@ -90,16 +90,15 @@
     color: #495057;
 }
 
-/* Style of the dropdown items container - now positioned via JavaScript */
+/* Style of the dropdown items container - positioned via JavaScript */
 .snap-select-items {
     background-color: #ffffff;
-    border: 1px solid #ced4da;
+    border: 2px solid #888;
     border-radius: 0.375rem;
     z-index: 10000;
     max-height: 200px;
     overflow-y: auto;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    /* Position is now set dynamically via JavaScript */
+    box-shadow: 0px 0px 6px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Style of each dropdown item */
