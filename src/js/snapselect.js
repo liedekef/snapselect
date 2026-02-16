@@ -170,6 +170,7 @@
             });
 
             select.dispatchEvent(new Event('change', { bubbles: true }));
+            select.dispatchEvent(new Event('input',  { bubbles: true }));
 
             if (select.required) {
                 if (selectedValues.size === 0) {
@@ -297,6 +298,7 @@
                         config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
                     }
                     select.dispatchEvent(new Event('change', { bubbles: true }));
+                    select.dispatchEvent(new Event('input',  { bubbles: true }));
                 });
                 selectedText.appendChild(removeButton);
                 selectedText.style.display = 'inline-block';
@@ -800,7 +802,7 @@
                 });
             } else {
                 optionDiv.textContent = option.textContent;
-                
+                optionDiv.setAttribute('tabindex', '-1');
                 optionDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const prevValue = select.value;
@@ -815,6 +817,7 @@
                         config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
                     }
                     select.dispatchEvent(new Event('change', { bubbles: true }));
+                    select.dispatchEvent(new Event('input',  { bubbles: true }));
                     if (config.closeOnSelect) closeDropdown();
                 });
             }
@@ -887,6 +890,30 @@
                             }
                         }
                     });
+                } else {
+                    // Keyboard navigation for single-select
+                    itemsContainer.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape') {
+                            closeDropdown();
+                        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            const items       = Array.from(itemsContainer.querySelectorAll('.snap-select-item:not(.snap-select-item-disabled)'));
+                            const current     = document.activeElement;
+                            const currentIndex = items.indexOf(current);
+                            let nextIndex;
+                            if (e.key === 'ArrowDown') {
+                                nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+                            } else {
+                                nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+                            }
+                            items[nextIndex].focus();
+                        } else if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            if (document.activeElement.classList.contains('snap-select-item')) {
+                                document.activeElement.click();
+                            }
+                        }
+                    });
                 }
 
                 dropdownOverlay.addEventListener('click', (event) => {
@@ -912,8 +939,8 @@
             }
         };
 
+        /* listeners to open/close the dropdown */
         selectedContainer.addEventListener('click', toggleDropdown);
-
         selectedContainer.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -1003,6 +1030,7 @@
                 select.value = '';
                 updateSingleSelect(config.placeholder, true);
                 select.dispatchEvent(new Event('change', { bubbles: true }));
+                select.dispatchEvent(new Event('input',  { bubbles: true }));
             }
         };
 

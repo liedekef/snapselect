@@ -116,6 +116,9 @@
 .snap-select-item:hover {
     background-color: #f3f5f6;
 }
+.snap-select-item:focus {
+    background-color: #f3f5f6;
+}
 
 /* Checkbox within dropdown items */
 .snap-select-checkbox {
