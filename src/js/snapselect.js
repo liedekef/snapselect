@@ -635,6 +635,7 @@
 
                 searchInput = document.createElement('input');
                 searchInput.classList.add('snap-select-search');
+                searchInput.setAttribute('tabindex', '-1');
                 searchInput.setAttribute('placeholder', config.ajax ? 'Search...' : 'Search...');
                 searchWrapper.appendChild(searchInput);
 
@@ -668,7 +669,13 @@
                 // Prevent dropdown from closing when typing
                 searchInput.addEventListener('keydown', (e) => {
                     e.stopPropagation();
-                    if (e.key === 'Escape') closeDropdown();
+                    if (e.key === 'Escape') {
+                        closeDropdown();
+                    } else if (e.key === 'Tab') {
+                        e.preventDefault();
+                        const first = itemsContainer.querySelector('.snap-select-item:not(.snap-select-item-disabled)');
+                        if (first) first.focus();
+                    }
                 });
             }
 
@@ -882,6 +889,9 @@
                 itemsContainer.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape') {
                         closeDropdown();
+                    } else if (e.key === 'Tab') {
+                        e.preventDefault();
+                        if (searchInput) searchInput.focus();
                     } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                         e.preventDefault();
                         const items       = Array.from(itemsContainer.querySelectorAll('.snap-select-item:not(.snap-select-item-disabled)'));

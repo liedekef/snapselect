@@ -113,11 +113,10 @@
 }
 
 /* Hover effect on dropdown items */
-.snap-select-item:hover {
-    background-color: #f3f5f6;
-}
+.snap-select-item:hover,
 .snap-select-item:focus {
-    background-color: #f3f5f6;
+    background-color: #dde2e5;
+    outline: none;
 }
 
 /* Checkbox within dropdown items */
