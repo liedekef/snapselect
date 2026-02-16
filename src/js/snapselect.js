@@ -776,6 +776,7 @@
                 checkbox.type  = 'checkbox';
                 checkbox.classList.add('snap-select-checkbox');
                 checkbox.checked = selectedValues.has(option.value);
+                if (checkbox.checked) optionDiv.classList.add('snap-select-item-selected');
                 optionDiv.appendChild(checkbox);
 
                 checkboxMap.set(option.value, checkbox);
@@ -790,11 +791,13 @@
                     if (selectedValues.has(option.value)) {
                         selectedValues.delete(option.value);
                         checkbox.checked = false;
+                        optionDiv.classList.remove('snap-select-item-selected');
                         if (config.onItemDelete) config.onItemDelete.call(select, option.value, option.textContent);
                     } else {
                         if (selectedValues.size < config.maxSelections) {
                             selectedValues.add(option.value);
                             checkbox.checked = true;
+                            optionDiv.classList.add('snap-select-item-selected');
                             if (config.onItemAdd) config.onItemAdd.call(select, option.value, option.textContent);
                         }
                     }
@@ -803,9 +806,13 @@
             } else {
                 optionDiv.textContent = option.textContent;
                 optionDiv.setAttribute('tabindex', '-1');
+                if (option.value === select.value) optionDiv.classList.add('snap-select-item-selected');
                 optionDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const prevValue = select.value;
+                    // Update selected class on sibling items
+                    itemsContainer?.querySelectorAll('.snap-select-item').forEach(el => el.classList.remove('snap-select-item-selected'));
+                    optionDiv.classList.add('snap-select-item-selected');
                     select.value = option.value;
                     updateSingleSelect(option.textContent);
                     selectedContainer.classList.remove('snap-select-invalid');
@@ -863,6 +870,12 @@
                 populateItems();
                 positionDropdown();
                 itemsContainer.focus();
+                // Focus the already-selected item, or the first item if nothing is selected
+                requestAnimationFrame(() => {
+                    const selected = itemsContainer?.querySelector('.snap-select-item-selected:not(.snap-select-item-disabled)');
+                    const first    = itemsContainer?.querySelector('.snap-select-item:not(.snap-select-item-disabled)');
+                    (selected || first)?.focus();
+                });
                 customSelect.setAttribute('aria-expanded', 'true');
 
                 // Keyboard navigation
