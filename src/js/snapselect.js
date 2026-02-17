@@ -11,11 +11,11 @@
    *   Alias: maxItems — both the option `maxItems` and the attribute `data-max-items` are
    *   accepted and behave identically to maxSelections / data-max-selections.
    * - placeholder (string): Placeholder text for the select box.
-   * - clearAllButton (boolean): Shows a button to clear all selections (for multiple select).
+   * - showClearButton (boolean): Shows a button to clear the current selection (works for both
+   *   single and multiple select). Aliases: clearAllButton, allowEmpty (both deprecated).
    * - selectOptgroups (boolean): Allows selecting all options within an optgroup.
    * - selectAllOption (boolean): Adds a "Select All" option to the dropdown (for multiple select).
    * - closeOnSelect (boolean): Closes the dropdown after selecting an option (single-select only).
-   * - allowEmpty (boolean): Allows deselection of a selected option (for single select).
    * - onItemAdd (function): Called when an item is selected. Receives (value, text).
    * - onItemDelete (function): Called when an item is deselected. Receives (value, text).
    *
@@ -71,11 +71,12 @@
             maxSelections:   select.hasAttribute('data-max-selections')   ? parseInt(select.getAttribute('data-max-selections'))     :
                              select.hasAttribute('data-max-items')        ? parseInt(select.getAttribute('data-max-items'))          : undefined,
             placeholder:     select.hasAttribute('data-placeholder')      ? select.getAttribute('data-placeholder')                  : undefined,
-            clearAllButton:  select.hasAttribute('data-clear-all-button') ? select.getAttribute('data-clear-all-button') === 'true'  : undefined,
+            showClearButton: select.hasAttribute('data-show-clear-button') ? select.getAttribute('data-show-clear-button') === 'true' :
+                             select.hasAttribute('data-clear-all-button')  ? select.getAttribute('data-clear-all-button') === 'true'  :
+                             select.hasAttribute('data-allow-empty')       ? select.getAttribute('data-allow-empty') === 'true'       : undefined,
             selectOptgroups: select.hasAttribute('data-select-optgroups') ? select.getAttribute('data-select-optgroups') === 'true'  : undefined,
             selectAllOption: select.hasAttribute('data-select-all-option')? select.getAttribute('data-select-all-option') === 'true' : undefined,
-            closeOnSelect:   select.hasAttribute('data-close-on-select')  ? select.getAttribute('data-close-on-select') === 'true'   : undefined,
-            allowEmpty:      select.hasAttribute('data-allow-empty')      ? select.getAttribute('data-allow-empty') === 'true'       : undefined
+            closeOnSelect:   select.hasAttribute('data-close-on-select')  ? select.getAttribute('data-close-on-select') === 'true'   : undefined
         };
         
         // Combine default options with user options
@@ -83,11 +84,10 @@
             liveSearch:      dataOptions.liveSearch      !== undefined ? dataOptions.liveSearch      : (options.liveSearch      !== undefined ? options.liveSearch      : false),
             maxSelections:   dataOptions.maxSelections   !== undefined ? dataOptions.maxSelections   : (options.maxSelections   !== undefined ? options.maxSelections   : (options.maxItems !== undefined ? options.maxItems : Infinity)),
             placeholder:     dataOptions.placeholder     !== undefined ? dataOptions.placeholder     : (options.placeholder     !== undefined ? options.placeholder     : 'Select...'),
-            clearAllButton:  dataOptions.clearAllButton  !== undefined ? dataOptions.clearAllButton  : (options.clearAllButton  !== undefined ? options.clearAllButton  : false),
+            showClearButton: dataOptions.showClearButton !== undefined ? dataOptions.showClearButton : (options.showClearButton !== undefined ? options.showClearButton : (options.clearAllButton !== undefined ? options.clearAllButton : (options.allowEmpty !== undefined ? options.allowEmpty : false))),
             selectOptgroups: dataOptions.selectOptgroups !== undefined ? dataOptions.selectOptgroups : (options.selectOptgroups !== undefined ? options.selectOptgroups : false),
             selectAllOption: dataOptions.selectAllOption !== undefined ? dataOptions.selectAllOption : (options.selectAllOption !== undefined ? options.selectAllOption : false),
             closeOnSelect:   dataOptions.closeOnSelect   !== undefined ? dataOptions.closeOnSelect   : (options.closeOnSelect   !== undefined ? options.closeOnSelect   : true),
-            allowEmpty:      dataOptions.allowEmpty      !== undefined ? dataOptions.allowEmpty      : (options.allowEmpty      !== undefined ? options.allowEmpty      : false),
 
             // AJAX options
             ajax:            options.ajax   || null,
@@ -213,7 +213,7 @@
                     tagContainer.appendChild(tag);
                 });
 
-                if (config.clearAllButton) {
+                if (config.showClearButton) {
                     const clearAllButton = document.createElement('span');
                     clearAllButton.classList.add('snap-select-clear-all');
                     clearAllButton.textContent = '×';
@@ -283,7 +283,7 @@
             selectedText.classList.add('snap-select-single-selected-text');
             selectedText.textContent = text;
 
-            if (config.allowEmpty && !noAllowEmpty) {
+            if (config.showClearButton && !noAllowEmpty) {
                 const removeButton = document.createElement('span');
                 removeButton.classList.add('snap-select-clear-all');
                 removeButton.textContent = '×';
@@ -293,7 +293,7 @@
                     const prevValue = select.value;
                     const prevOption = select.querySelector(`option[value="${prevValue}"]`);
                     select.value = '';
-                    updateSingleSelect(config.placeholder,true);
+                    updateSingleSelect(config.placeholder, true);
                     if (config.onItemDelete && prevValue) {
                         config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
                     }
@@ -759,11 +759,11 @@
 
                     itemsContainer.appendChild(group);
                 } else if (child.tagName === 'OPTION') {
-                    // skip the option only if allowEmpty is set AND the option has no value AND
-                    //    no text — that's the "empty first option as a forcing trick" pattern,
-                    // then it's safe to drop from the dropdown since allowEmpty already provides
-                    //    the clear button for returning to an unselected state
-                    if ((config.allowEmpty||config.clearAllButton) && child.value === '' && child.textContent.trim() === '') return;
+                    // Skip an empty-value first option — whether it has text (used as a placeholder label)
+                    // or is completely blank (the classic "forcing trick"). In both cases the clear button
+                    // already provides the way back to the unselected state, so it should not appear as a
+                    // selectable item in the dropdown.
+                    if (config.showClearButton && child.value === '' && child === select.options[0]) return;
                     const item = createOptionItem(child);
                     item.dataset.optgroup = '';
                     itemsContainer.appendChild(item);
@@ -972,15 +972,27 @@
             });
             updateDisplay();
         } else {
+            // If the first option has value="" treat it as an implicit clear button,
+            // regardless of whether showClearButton was explicitly set.
+            // The placeholder for the cleared state is: first option's text → config.placeholder → ''.
+            const firstOpt = select.options[0];
+            const hasEmptyFirstOption = firstOpt && firstOpt.value === '';
+            if (hasEmptyFirstOption) {
+                config.showClearButton = true;
+                const firstOptText = firstOpt.textContent.trim();
+                if (firstOptText)
+                    config.placeholder = firstOptText;
+            }
             const selectedOption = select.querySelector('option[selected]');
-            if (selectedOption) {
+            if (selectedOption && selectedOption.value !== '') {
+                // An option is explicitly pre-selected — show it
                 updateSingleSelect(selectedOption.textContent);
-            } else if ((config.allowEmpty || !select.value)) {
-                if (!config.placeholder && select.options[0])
-                    config.placeholder = select.options[0].textContent;
+            } else if (hasEmptyFirstOption || config.ajax) {
+                // Empty first option acts as placeholder, or AJAX mode (no options pre-loaded) — show cleared state
                 updateSingleSelect(config.placeholder, true);
-            } else if (select.options[0]) {
-                updateSingleSelect(select.options[0].textContent);
+            } else if (firstOpt) {
+                // No empty first option, nothing pre-selected — mirror browser default (first option is selected)
+                updateSingleSelect(firstOpt.textContent);
             }
         }
 
