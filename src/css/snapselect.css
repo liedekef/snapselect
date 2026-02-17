@@ -80,6 +80,7 @@
     display: inline-flex;
     align-items: center;
     font-size: 0.875rem;
+    cursor: default;
 }
 
 /* Style of the remove tag button */
@@ -87,7 +88,11 @@
     margin-left: 0.25rem;
     font-weight: bold;
     cursor: pointer;
+    color: #999;
+}
+.snap-select-tag .snap-select-remove:hover {
     color: #495057;
+    background-color: #cdcdcd;
 }
 
 /* Style of the dropdown items container - positioned via JavaScript */
