@@ -17,7 +17,7 @@
 - **Ajax call:** Remote data with infinite scrolling.
 - **Multi-Select Support:** Allows for multiple selections with intuitive tag management.
 - **Optgroup Selection:** Easily select or deselect all options within an optgroup.
-- **Clear All Button:** Option to clear all selected options at once (for multi-select).
+- **Clear Button:** Option to show a clear button to reset the current selection (works for both single and multi-select).
 - **Select All Option:** Add a "Select All" option to quickly select all available options (for multi-select).
 - **Customizable Placeholder:** Define custom placeholder text for an empty selection.
 - **Custom Search Keywords:** Enhance search functionality with custom keywords for each option.
@@ -120,11 +120,10 @@ Initialize SnapSelect on your desired `<select>` elements using any selector:
     data-live-search="true" 
     data-placeholder="Choose an option" 
     data-max-selections="3"
-    data-clear-all-button="true"
+    data-show-clear-button="true"
     data-select-optgroups="true"
     data-select-all-option="true"
-    data-close-on-select="false"
-    data-allow-empty="true">
+    data-close-on-select="false">
     <optgroup label="Africa">
         <option value="ZA" data-key="braai Pretoria English">South Africa</option>
         <option value="NG" data-key="jollof Abuja English">Nigeria</option>
@@ -138,12 +137,11 @@ Initialize SnapSelect on your desired `<select>` elements using any selector:
         SnapSelect('.snapSelect', {
             liveSearch: true,
             placeholder: 'Select an option...',
-            clearAllButton: true,
+            showClearButton: true,
             selectOptgroups: true,
             selectAllOption: true,
             closeOnSelect: false,
             maxSelections: 10,
-            allowEmpty: true
         });
     });
 </script>
@@ -296,11 +294,10 @@ The change-event and input-event on the underlying `<select>` are still emitted,
 -   `data-max-selections="number"` (number): Sets the maximum number of selections allowed.
 -   `data-max-items="number"` (number): Alias for `data-max-selections`.
 -   `data-placeholder="text"` (string): Sets the placeholder text when no option is selected.
--   `data-clear-all-button="true|false"` (boolean): Shows or hides the "Clear All" button.
+-   `data-show-clear-button="true|false"` (boolean): Shows or hides the clear button (works for both single and multi-select). Deprecated aliases: `data-clear-all-button`, `data-allow-empty`.
 -   `data-select-optgroups="true|false"` (boolean): Allows or disallows selecting all options within an optgroup.
 -   `data-select-all-option="true|false"` (boolean): Adds or removes the "Select All" option.
 -   `data-close-on-select="true|false"` (boolean): Closes or keeps open the dropdown after selection.
--   `data-allow-empty="true|false"` (boolean): Allows or disallows deselection in single select mode.
 
 ## Configuration Options
 
@@ -309,11 +306,10 @@ The change-event and input-event on the underlying `<select>` are still emitted,
 -   `liveSearch` (boolean): Enable live search functionality. Default: `false`.
 -   `maxSelections` (number): Maximum number of selections allowed (for multi-select). Alias: `maxItems`. Default: `Infinity`.
 -   `placeholder` (string): Custom placeholder text. Default: `'Select...'`.
--   `clearAllButton` (boolean): Show a "Clear All" button for multi-select. Default: `false`.
+-   `showClearButton` (boolean): Show a button to clear the current selection. For multi-select, clears all tags at once; for single-select, reverts to the placeholder. Default: `false`. Deprecated aliases: `clearAllButton`, `allowEmpty`.
 -   `selectOptgroups` (boolean): Allow selecting/deselecting all options within an optgroup. Default: `false`.
 -   `selectAllOption` (boolean): Add a "Select All" option for multi-select. Default: `false`.
 -   `closeOnSelect` (boolean): Close the dropdown after each selection (single-select only). Default: `true`.
--   `allowEmpty` (boolean): Allows deselection of a selected option (for single select). Defaults to true if the `<select>` is not required, false if it is.
 
 ### Callbacks
 
