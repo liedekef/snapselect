@@ -809,6 +809,7 @@
                         }
                     }
                     updateDisplay();
+                    if (config.maxSelections==1 && selectedValues.size==1) closeDropdown();
                 });
             } else {
                 optionDiv.textContent = option.textContent;
