@@ -30,7 +30,7 @@
    *       this.querySelector(`option[value="${value}"]`).dataset.
    *     - delay (number): Debounce delay in ms for search input, default 300.
    *     - minimumInputLength (number): Minimum characters before fetching, default 0.
-   *     - cache (boolean): Cache results per (search+page) key, default true.
+   *     - cache (boolean): Cache results per (search+page) key. Default: `false` if `url` or `data` is a function, `true` otherwise.
    *     - headers (object): Extra request headers.
    *     - pagesize (number): Items per page sent to the server, default 20.
    *     - loadingText (string): Text shown while loading, default 'Loading...'.

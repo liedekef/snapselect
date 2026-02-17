@@ -286,6 +286,10 @@ SnapSelect('#selectAjax', {
 
 ---
 
+## Events
+
+The change-event and input-event on the underlying `<select>` are still emitted, so you can hook into those as usual.
+
 ## Supported Data Attributes
 
 -   `data-live-search="true|false"` (boolean): Enables or disables the search functionality.
@@ -336,9 +340,9 @@ Both callbacks work in static and AJAX modes and are independent of the native `
 ### AJAX options
 
 -   `ajax` (object): Enables remote data loading. When set, the dropdown fetches options from a server instead of reading them from the HTML. Default: `null`.
-    -   `url` (string|function): The endpoint URL, or a function `(searchTerm, page) => string` for dynamic URLs. When a function, `this` refers to the underlying `<select>` element.
+    -   `url` (string|function) **required**: The endpoint URL, or a function `(searchTerm, page) => string` for dynamic URLs. When a function, `this` refers to the underlying `<select>` element. When a function, this also changes the default cache value (see that option).
     -   `method` (string): HTTP method. Default: `'GET'`.
-    -   `data` (object|function): Optional. A plain object of extra parameters, or a function `(searchTerm, page) => object`, merged into every request. When a function, `this` refers to the underlying `<select>` element.
+    -   `data` (object|function): Optional. A plain object of extra parameters, or a function `(searchTerm, page) => object`, merged into every request. When a function, `this` refers to the underlying `<select>` element. When a function, this also changes the default cache value (see that option).
     -   `processResults` (function): Optional. Maps the raw server response to `{ results: [{id, text, ...extras}], hasMore: bool }`. `this` refers to the underlying `<select>` element. If omitted, SnapSelect expects the response to be either a plain array or an object with a `results` array and a `hasMore` boolean. Any extra properties on each result item beyond `id` and `text` are stored as `data-*` attributes on the underlying `<option>` element, making them accessible in `onItemAdd`/`onItemDelete` via `this.querySelector(\`option[value="${value}"]\`).dataset`.
     -   `delay` (number): Debounce delay in ms before firing a search request. Default: `300`.
     -   `minimumInputLength` (number): Minimum number of characters required before fetching. Default: `0`.
@@ -387,15 +391,6 @@ SnapSelect is designed with accessibility in mind and includes ARIA attributes t
 -   The main container is set as `role="combobox"` with `aria-expanded` and `aria-haspopup` attributes.
 -   The items container is set as `role="listbox"`.
 -   Selected items are dynamically updated with `aria-live="polite"` for screen reader notifications.
-
-## Compatibility and Polyfills
-
-SnapSelect includes polyfills to support older browsers:
-
--   `classList` Polyfill: Adds support for classList manipulation on elements.
--   `addEventListener` Polyfill: Adds support for addEventListener on elements.
-
-These polyfills ensure that SnapSelect works across a wide range of browsers, including older versions of Internet Explorer.
 
 ## Contributing
 
