@@ -99,11 +99,11 @@
 
         // Normalise ajax sub-options
         if (config.ajax) {
-            config.ajax = Object.assign({
+            const defaults = {
                 method:             'GET',
                 delay:              300,
                 minimumInputLength: 0,
-                cache:              (typeof config.ajax.url === 'function' || typeof config.ajax.data === 'function')? false : true,
+                cache:              (typeof config.ajax.url === 'function' || typeof config.ajax.data === 'function') ? false : true,
                 headers:            {},
                 data:               null,
                 processResults:     null,
@@ -111,7 +111,15 @@
                 loadingText:        'Loading...',
                 noResultsText:      'No results found',
                 errorText:          'Error loading results'
-            }, config.ajax);
+            };
+            // Filter out undefined values from config.ajax so they don't overwrite defaults
+            const userAjax = {};
+            Object.keys(config.ajax).forEach(key => {
+                if (config.ajax[key] !== undefined) {
+                    userAjax[key] = config.ajax[key];
+                }
+            });
+            config.ajax = Object.assign(defaults, userAjax);
         }
 
         // ── AJAX state ────────────────────────────────────────────────────────────
