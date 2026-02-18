@@ -170,7 +170,7 @@
         const checkboxMap    = new Map();
 
         // ── Display helpers ──────────────────────────────────────────────────────
-        const updateDisplay = () => {
+        const updateMultipleDisplay = () => {
             tagContainer.innerHTML = '';
 
             Array.from(select.options).forEach(opt => {
@@ -214,7 +214,7 @@
                         const checkbox = checkboxMap.get(val.toString());
                         if (checkbox) checkbox.checked = false;
                         if (config.onItemDelete) config.onItemDelete.call(select, val, option.textContent);
-                        updateDisplay();
+                        updateMultipleDisplay();
                     });
 
                     tag.appendChild(removeButton);
@@ -229,7 +229,7 @@
                         e.stopPropagation();
                         selectedValues.clear();
                         checkboxMap.forEach(cb => cb.checked = false);
-                        updateDisplay();
+                        updateMultipleDisplay();
                     });
                     tagContainer.appendChild(clearAllButton);
                 }
@@ -709,8 +709,9 @@
                 selectAllDiv.appendChild(selectAllLabel);
                 
                 selectAllDiv.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const allSelected = selectedValues.size === select.options.length;
+                    const optionsLength = select.options.length;
+                    const maxSelected = config.maxSelections < optionsLength ? config.maxSelections : optionsLength;
+                    const allSelected = selectedValues.size === maxSelected;
                     
                     if (allSelected) {
                         selectedValues.clear();
@@ -718,7 +719,7 @@
                         selectAllCheckbox.checked = false;
                     } else {
                         Array.from(select.options).forEach(option => {
-                            if (selectedValues.size < config.maxSelections) {
+                            if (selectedValues.size < maxSelected) {
                                 selectedValues.add(option.value);
                                 const checkbox = checkboxMap.get(option.value);
                                 if (checkbox) checkbox.checked = true;
@@ -727,7 +728,7 @@
                         selectAllCheckbox.checked = true;
                     }
                     
-                    updateDisplay();
+                    updateMultipleDisplay();
                 });
                 
                 itemsContainer.appendChild(selectAllDiv);
@@ -755,7 +756,7 @@
                                     addedCount++;
                                 }
                             });
-                            if (addedCount > 0) updateDisplay();
+                            if (addedCount > 0) updateMultipleDisplay();
                         });
                     }
 
@@ -767,11 +768,6 @@
 
                     itemsContainer.appendChild(group);
                 } else if (child.tagName === 'OPTION') {
-                    // Skip an empty-value first option — whether it has text (used as a placeholder label)
-                    // or is completely blank (the classic "forcing trick"). In both cases the clear button
-                    // already provides the way back to the unselected state, so it should not appear as a
-                    // selectable item in the dropdown.
-                    if (config.showClearButton && child.value === '' && child === select.options[0]) return;
                     const item = createOptionItem(child);
                     item.dataset.optgroup = '';
                     itemsContainer.appendChild(item);
@@ -816,7 +812,7 @@
                             if (config.onItemAdd) config.onItemAdd.call(select, option.value, option.textContent);
                         }
                     }
-                    updateDisplay();
+                    updateMultipleDisplay();
                     if (config.maxSelections==1 && selectedValues.size==1) closeDropdown();
                 });
             } else {
@@ -974,23 +970,24 @@
         }, 0);
 
         // ── Initialise ───────────────────────────────────────────────────────────
+        // If the first option has value="" treat it as an implicit clear button,
+        // regardless of whether showClearButton was explicitly set.
+        // The placeholder for the cleared state is: first option's text → config.placeholder → ''.
+        const firstOpt = select.options[0];
+        const hasEmptyFirstOption = firstOpt && firstOpt.value === '';
+        if (hasEmptyFirstOption) {
+            config.showClearButton = true;
+            const firstOptText = firstOpt.textContent.trim();
+            if (firstOptText)
+                config.placeholder = firstOptText;
+            select.remove(0);
+        }
         if (isMultiple) {
             Array.from(select.selectedOptions).forEach(option => {
                 selectedValues.add(option.value);
             });
-            updateDisplay();
+            updateMultipleDisplay();
         } else {
-            // If the first option has value="" treat it as an implicit clear button,
-            // regardless of whether showClearButton was explicitly set.
-            // The placeholder for the cleared state is: first option's text → config.placeholder → ''.
-            const firstOpt = select.options[0];
-            const hasEmptyFirstOption = firstOpt && firstOpt.value === '';
-            if (hasEmptyFirstOption) {
-                config.showClearButton = true;
-                const firstOptText = firstOpt.textContent.trim();
-                if (firstOptText)
-                    config.placeholder = firstOptText;
-            }
             const selectedOption = select.querySelector('option[selected]');
             if (selectedOption && selectedOption.value !== '') {
                 // An option is explicitly pre-selected — show it
@@ -1042,7 +1039,7 @@
             if (isMultiple) {
                 selectedValues.clear();
                 checkboxMap.forEach(cb => cb.checked = false);
-                updateDisplay();
+                updateMultipleDisplay();
             } else {
                 select.value = '';
                 updateSingleSelect(config.placeholder, true);
