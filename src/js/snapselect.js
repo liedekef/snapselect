@@ -768,6 +768,13 @@
 
                     itemsContainer.appendChild(group);
                 } else if (child.tagName === 'OPTION') {
+                    // skip the option only if allowEmpty is set AND the option has no value AND
+                    //    no text — that's the "empty first option as a forcing trick" pattern,
+                    // then it's safe to drop from the dropdown since allowEmpty already provides
+                    //    the clear button for returning to an unselected state
+                    // Since we already removed the empty first option 
+                    if (config.showClearButton && child.value === '' && child === select.options[0]) return;
+
                     const item = createOptionItem(child);
                     item.dataset.optgroup = '';
                     itemsContainer.appendChild(item);
@@ -980,7 +987,11 @@
             const firstOptText = firstOpt.textContent.trim();
             if (firstOptText)
                 config.placeholder = firstOptText;
-            select.remove(0);
+            if (isMultiple) {
+                // for multiple selects we can remove an empty first option, but not for single selects
+                // because for single selects that would result in the first option being taken upon form submit
+                select.remove(0);
+            }
         }
         if (isMultiple) {
             Array.from(select.selectedOptions).forEach(option => {
