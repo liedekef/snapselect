@@ -889,12 +889,6 @@
                 populateItems();
                 positionDropdown();
                 itemsContainer.focus();
-                // Focus the already-selected item, or the first item if nothing is selected
-                requestAnimationFrame(() => {
-                    const selected = itemsContainer?.querySelector('.snap-select-item-selected:not(.snap-select-item-disabled)');
-                    const first    = itemsContainer?.querySelector('.snap-select-item:not(.snap-select-item-disabled)');
-                    (selected || first)?.focus();
-                });
                 customSelect.setAttribute('aria-expanded', 'true');
 
                 // Keyboard navigation
