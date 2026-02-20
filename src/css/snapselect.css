@@ -11,6 +11,12 @@
     display: none;
 }
 
+/* Disabled state */
+.snap-select-disabled .snap-select-selected {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Overlay for closing dropdown when clicking outside */
 .snap-select-overlay {
     position: fixed;

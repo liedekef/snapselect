@@ -216,6 +216,7 @@
                     removeButton.textContent = '×';
                     removeButton.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        if (select.disabled) return;
                         selectedValues.delete(val);
                         const checkbox = checkboxMap.get(val.toString());
                         if (checkbox) checkbox.checked = false;
@@ -233,6 +234,7 @@
                     clearAllButton.textContent = '×';
                     clearAllButton.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        if (select.disabled) return;
                         selectedValues.clear();
                         checkboxMap.forEach(cb => cb.checked = false);
                         updateMultipleDisplay();
@@ -304,6 +306,7 @@
                 removeButton.style.float = 'right';
                 removeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    if (select.disabled) return;
                     const prevValue = select.value;
                     const prevOption = select.querySelector(`option[value="${prevValue}"]`);
                     select.value = '';
@@ -860,6 +863,7 @@
         // ── Toggle dropdown ──────────────────────────────────────────────────────
         const toggleDropdown = (e) => {
             if (e) e.stopPropagation();
+            if (select.disabled) return;
 
             if (itemsContainer) {
                 closeDropdown();
@@ -958,6 +962,23 @@
             }
         });
 
+        // ── Disabled state ───────────────────────────────────────────────────────
+        const syncDisabled = () => {
+            if (select.disabled) {
+                customSelect.classList.add('snap-select-disabled');
+                selectedContainer.setAttribute('tabindex', '-1');
+                if (itemsContainer) closeDropdown();
+            } else {
+                customSelect.classList.remove('snap-select-disabled');
+                selectedContainer.setAttribute('tabindex', '0');
+            }
+        };
+        syncDisabled();
+
+        // Observe the select's attributes so toggling select.disabled at runtime is reflected
+        const disabledObserver = new MutationObserver(syncDisabled);
+        disabledObserver.observe(select, { attributes: true, attributeFilter: ['disabled'] });
+
         // Clean up when element is removed from DOM
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
@@ -965,6 +986,7 @@
                     if (node === customSelect || (node.contains && node.contains(customSelect))) {
                         closeDropdown();
                         observer.disconnect();
+                        disabledObserver.disconnect();
                     }
                 });
             });
@@ -1047,6 +1069,7 @@
 
         // ── Public methods ───────────────────────────────────────────────────────
         this.clear = function() {
+            if (select.disabled) return;
             if (isMultiple) {
                 selectedValues.clear();
                 checkboxMap.forEach(cb => cb.checked = false);
