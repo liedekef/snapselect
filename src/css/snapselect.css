@@ -133,7 +133,6 @@
 .snap-select-item-selected {
     background-color: #dde0e3;
     color: #2c2c2c;
-    font-weight: 500;
 }
 
 /* Hover/focus on an already-selected item */
