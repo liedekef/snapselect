@@ -120,6 +120,12 @@
                 }
             });
             config.ajax = Object.assign(defaults, userAjax);
+
+            if (!isMultiple) {
+                const emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                select.prepend(emptyOpt);
+            }
         }
 
         // ── AJAX state ────────────────────────────────────────────────────────────
