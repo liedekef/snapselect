@@ -11,12 +11,6 @@
     display: none;
 }
 
-/* Disabled state */
-.snap-select-disabled .snap-select-selected {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 /* Overlay for closing dropdown when clicking outside */
 .snap-select-overlay {
     position: fixed;
@@ -308,4 +302,11 @@
     color: red;
     font-size: 0.85em;
     font-weight: 600;
+}
+
+/* Disabled state */
+.snap-select-disabled * {
+    opacity: 0.8;
+    pointer-events: bounding-box;
+    cursor: text;
 }
