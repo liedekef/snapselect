@@ -159,12 +159,6 @@ Use the `ajax` option to load options from a remote endpoint. The select element
         liveSearch: true,
         ajax: {
             url: '/api/users',
-            processResults: function(response) {
-                return {
-                    results: response.data,   // array of { id, text }
-                    hasMore: response.meta.hasMore
-                };
-            }
         }
     });
 </script>
@@ -183,7 +177,54 @@ Expected response shape:
         { "id": 1, "text": "John Doe" },
         { "id": 2, "text": "John Smith" }
     ],
-    "meta": { "hasMore": true }
+    "hasMore": true
+}
+```
+
+### AJAX — using processResults to map remote data
+
+Use the `processResults` option to parse the ajax answer and convert it to the expected format. In this example we get TotalRecordCount from the backend, indicating the total number of records
+
+```html
+<select id="selectAjax" data-placeholder="Search users..."></select>
+
+<script>
+    SnapSelect('#selectAjax', {
+        liveSearch: true,
+        ajax: {
+            url: '/api/users',
+            processResults: function(data, search, page) {
+                    const records = Array.isArray(data)
+                        ? data
+                        : (data.Records || []);
+                    const total   = data.TotalRecordCount !== undefined
+                        ? data.TotalRecordCount
+                        : records.length;
+                    let hasMore = total > page * pagesize;
+                    // the next if covers the case where all rows are returned in 1 go, not respecting paging
+                    if (data.TotalRecordCount !== undefined && records.length >= data.TotalRecordCount)
+                        hasMore = false;
+                    return { results: records, hasMore };
+            }
+        }
+    });
+</script>
+```
+
+The server receives `q` (search term), `page`, and `pagesize` as query parameters on every request:
+
+```
+GET /api/users?q=john&page=1&pagesize=2
+```
+
+Example response shape:
+```json
+{
+    "data": [
+        { "id": 1, "text": "John Doe" },
+        { "id": 2, "text": "John Smith" }
+    ],
+    "TotalRecordCount": 10
 }
 ```
 
@@ -223,10 +264,10 @@ Use `data` to pass extra parameters (as a plain object or a function), and `meth
                     category: document.getElementById('categoryFilter').value
                 };
             },
-            processResults: function(response) {
+            processResults: function(data, search, page) {
                 return {
-                    results: response.items,
-                    hasMore: response.hasNextPage
+                    results: data.items,
+                    hasMore: data.hasNextPage
                 };
             }
         }
@@ -275,8 +316,8 @@ SnapSelect('#selectAjax', {
             'Authorization': 'Bearer my-token',
             'X-Custom-Header': 'value'
         },
-        processResults: function(response) {
-            return { results: response.results, hasMore: false };
+        processResults: function(data, search, page) {
+            return { results: data.results, hasMore: false };
         }
     }
 });
