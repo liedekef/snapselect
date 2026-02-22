@@ -307,6 +307,6 @@
 /* Disabled state */
 .snap-select-disabled * {
     opacity: 0.8;
-    pointer-events: bounding-box;
+    pointer-events: auto;
     cursor: text;
 }
