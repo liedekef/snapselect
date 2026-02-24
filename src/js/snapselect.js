@@ -83,7 +83,7 @@
         const config = {
             liveSearch:      dataOptions.liveSearch      !== undefined ? dataOptions.liveSearch      : (options.liveSearch      !== undefined ? options.liveSearch      : false),
             maxSelections:   dataOptions.maxSelections   !== undefined ? dataOptions.maxSelections   : (options.maxSelections   !== undefined ? options.maxSelections   : (options.maxItems !== undefined ? options.maxItems : Infinity)),
-            placeholder:     dataOptions.placeholder     !== undefined ? dataOptions.placeholder     : (options.placeholder     !== undefined ? options.placeholder     : 'Select...'),
+            placeholder:     dataOptions.placeholder     !== undefined ? dataOptions.placeholder     : (options.placeholder     !== undefined ? options.placeholder     : ''), // this needs to have an empty default, not something like "Select...", so the Initialise section can correctly decide to show placeholder
             showClearButton: dataOptions.showClearButton !== undefined ? dataOptions.showClearButton : (options.showClearButton !== undefined ? options.showClearButton : (options.clearAllButton !== undefined ? options.clearAllButton : (options.allowEmpty !== undefined ? options.allowEmpty : false))),
             selectOptgroups: dataOptions.selectOptgroups !== undefined ? dataOptions.selectOptgroups : (options.selectOptgroups !== undefined ? options.selectOptgroups : false),
             selectAllOption: dataOptions.selectAllOption !== undefined ? dataOptions.selectAllOption : (options.selectAllOption !== undefined ? options.selectAllOption : false),
@@ -1028,7 +1028,7 @@
             if (selectedOption && selectedOption.value !== '') {
                 // An option is explicitly pre-selected — show it
                 updateSingleSelect(selectedOption.textContent);
-            } else if (hasEmptyFirstOption || config.ajax) {
+            } else if (hasEmptyFirstOption || config.ajax || config.placeholder) {
                 // Empty first option acts as placeholder, or AJAX mode (no options pre-loaded) — show cleared state
                 updateSingleSelect(config.placeholder, true);
             } else if (firstOpt) {
