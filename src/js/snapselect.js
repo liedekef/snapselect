@@ -62,7 +62,7 @@
    */
     function SnapSelect(element, options = {}) {
         const select = element;
-        const isMultiple = select.multiple;
+        let isMultiple = select.multiple;
         const isRequired = select.required;
         
         // Read options from data attributes
@@ -96,6 +96,9 @@
             onItemAdd:    typeof options.onItemAdd    === 'function' ? options.onItemAdd    : null,
             onItemDelete: typeof options.onItemDelete === 'function' ? options.onItemDelete : null,
         };
+
+        if (config.maxSelections == 1)
+            isMultiple = false;
 
         // Normalise ajax sub-options
         if (config.ajax) {
