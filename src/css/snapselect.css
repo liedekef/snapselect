@@ -300,8 +300,7 @@
 }
 .snap-select-validation-message {
     color: red;
-    font-size: 0.85em;
-    font-weight: 600;
+    font-size: 0.9em;
 }
 
 /* Disabled state */
