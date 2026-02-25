@@ -129,6 +129,14 @@
                 emptyOpt.value = '';
                 select.prepend(emptyOpt);
             }
+        } else {
+            // for single selects that have a placeholder configred but not a first empty option: add one
+            if (!isMultiple && config.placeholder && select.options[0] && select.options[0].value!=='') {
+                const emptyOpt = document.createElement('option');
+                emptyOpt.value = '';
+                emptyOpt.selected = !select.querySelector('option[selected]'); // needed in the case field is required; this then triggers validation errors if nothing selected
+                select.prepend(emptyOpt);
+            }
         }
 
         // ── AJAX state ────────────────────────────────────────────────────────────
@@ -1029,7 +1037,7 @@
                 // An option is explicitly pre-selected — show it
                 updateSingleSelect(selectedOption.textContent);
             } else if (hasEmptyFirstOption || config.ajax || config.placeholder) {
-                // Empty first option acts as placeholder, or AJAX mode (no options pre-loaded) — show cleared state
+                // Empty first option acts as placeholder, or AJAX mode (no options pre-loaded), or placeholder configured — show cleared state
                 updateSingleSelect(config.placeholder, true);
             } else if (firstOpt) {
                 // No empty first option, nothing pre-selected — mirror browser default (first option is selected)
