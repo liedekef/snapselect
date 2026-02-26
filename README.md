@@ -346,7 +346,8 @@ The change-event and input-event on the underlying `<select>` are still emitted,
 
 -   `liveSearch` (boolean): Enable live search functionality. Default: `false`.
 -   `maxSelections` (number): Maximum number of selections allowed (for multi-select). Alias: `maxItems`. Default: `Infinity`.
--   `placeholder` (string): Custom placeholder text. Default: `'Select...'`.
+-   `placeholder` (string): Custom placeholder text. Default: ``. This causes an empty option to be added at the top if not present.
+-   `defaultText` (string): the text shown on the select box if the first option value and string are empty (placeholder takes precedence if present). Default: `Select...'`.
 -   `showClearButton` (boolean): Show a button to clear the current selection. For multi-select, clears all tags at once; for single-select, reverts to the placeholder. Default: `false`. Deprecated aliases: `clearAllButton`, `allowEmpty`.
 -   `selectOptgroups` (boolean): Allow selecting/deselecting all options within an optgroup. Default: `false`.
 -   `selectAllOption` (boolean): Add a "Select All" option for multi-select. Default: `false`.

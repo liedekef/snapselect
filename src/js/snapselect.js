@@ -11,6 +11,7 @@
    *   Alias: maxItems — both the option `maxItems` and the attribute `data-max-items` are
    *   accepted and behave identically to maxSelections / data-max-selections.
    * - placeholder (string): Placeholder text for the select box.
+   * - defaultText (string): the text shown on the select box if the first option value and string are empty (placeholder takes precedence if present)
    * - showClearButton (boolean): Shows a button to clear the current selection (works for both
    *   single and multiple select). Aliases: clearAllButton, allowEmpty (both deprecated).
    * - selectOptgroups (boolean): Allows selecting all options within an optgroup.
@@ -132,7 +133,7 @@
                 select.prepend(emptyOpt);
             }
         } else {
-            // for single selects that have a placeholder configred but not a first empty option: add one
+            // for single selects that have a placeholder configured but not a first empty option: add one
             if (!isMultiple && config.placeholder && select.options[0] && select.options[0].value!=='') {
                 const emptyOpt = document.createElement('option');
                 emptyOpt.value = '';
@@ -213,7 +214,7 @@
             if (selectedValues.size === 0) {
                 const placeholder = document.createElement('div');
                 placeholder.classList.add('snap-select-placeholder');
-                placeholder.textContent = config.placeholder;
+                placeholder.textContent = config.placeholder || config.defaultText;
                 tagContainer.appendChild(placeholder);
             } else {
                 Array.from(selectedValues).forEach(val => {
@@ -790,9 +791,9 @@
 
                     itemsContainer.appendChild(group);
                 } else if (child.tagName === 'OPTION') {
-                    // skip the option only if allowEmpty is set AND the option has no value AND
+                    // skip the option only if showClearButton is set AND the option has no value AND
                     //    no text — that's the "empty first option as a forcing trick" pattern,
-                    // then it's safe to drop from the dropdown since allowEmpty already provides
+                    // then it's safe to drop from the dropdown since showClearButton already provides
                     //    the clear button for returning to an unselected state
                     // Since we already removed the empty first option 
                     if (config.showClearButton && child.value === '' && child === select.options[0]) return;
