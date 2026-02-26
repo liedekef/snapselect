@@ -76,7 +76,8 @@
                              select.hasAttribute('data-allow-empty')       ? select.getAttribute('data-allow-empty') === 'true'       : undefined,
             selectOptgroups: select.hasAttribute('data-select-optgroups') ? select.getAttribute('data-select-optgroups') === 'true'  : undefined,
             selectAllOption: select.hasAttribute('data-select-all-option')? select.getAttribute('data-select-all-option') === 'true' : undefined,
-            closeOnSelect:   select.hasAttribute('data-close-on-select')  ? select.getAttribute('data-close-on-select') === 'true'   : undefined
+            closeOnSelect:   select.hasAttribute('data-close-on-select')  ? select.getAttribute('data-close-on-select') === 'true'   : undefined,
+            defaultText:     select.hasAttribute('data-default-text')  ? select.getAttribute('data-default-text') : undefined
         };
         
         // Combine default options with user options
@@ -88,6 +89,7 @@
             selectOptgroups: dataOptions.selectOptgroups !== undefined ? dataOptions.selectOptgroups : (options.selectOptgroups !== undefined ? options.selectOptgroups : false),
             selectAllOption: dataOptions.selectAllOption !== undefined ? dataOptions.selectAllOption : (options.selectAllOption !== undefined ? options.selectAllOption : false),
             closeOnSelect:   dataOptions.closeOnSelect   !== undefined ? dataOptions.closeOnSelect   : (options.closeOnSelect   !== undefined ? options.closeOnSelect   : true),
+            defaultText:     dataOptions.defaultText     !== undefined ? dataOptions.defaultText     : (options.defaultText     !== undefined ? options.defaultText     : 'Select...'),
 
             // AJAX options
             ajax:            options.ajax   || null,
@@ -321,7 +323,7 @@
                     const prevValue = select.value;
                     const prevOption = select.querySelector(`option[value="${prevValue}"]`);
                     select.value = '';
-                    updateSingleSelect(config.placeholder, true);
+                    updateSingleSelect(config.placeholder || config.defaultText, true);
                     if (config.onItemDelete && prevValue) {
                         config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
                     }
@@ -1038,7 +1040,7 @@
                 updateSingleSelect(selectedOption.textContent);
             } else if (hasEmptyFirstOption || config.ajax || config.placeholder) {
                 // Empty first option acts as placeholder, or AJAX mode (no options pre-loaded), or placeholder configured — show cleared state
-                updateSingleSelect(config.placeholder, true);
+                updateSingleSelect(config.placeholder || config.defaultText, true);
             } else if (firstOpt) {
                 // No empty first option, nothing pre-selected — mirror browser default (first option is selected)
                 updateSingleSelect(firstOpt.textContent);
@@ -1087,7 +1089,7 @@
                 updateMultipleDisplay();
             } else {
                 select.value = '';
-                updateSingleSelect(config.placeholder, true);
+                updateSingleSelect(config.placeholder || config.defaultText, true);
                 select.dispatchEvent(new Event('change', { bubbles: true }));
                 select.dispatchEvent(new Event('input',  { bubbles: true }));
             }
