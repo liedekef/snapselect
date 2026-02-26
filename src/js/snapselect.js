@@ -105,23 +105,29 @@
 
     // ── Config ─────────────────────────────────────────────────────────────────
     _buildConfig(options) {
-      const data = this._readDataAttributes(this.select);
-      const pick = (dataVal, optVal, fallback) =>
-        dataVal !== undefined ? dataVal : (optVal !== undefined ? optVal : fallback);
+        const data = this._readDataAttributes(this.select);
+        const pick = (dataVal, optVal, fallback) =>
+            dataVal !== undefined ? dataVal : (optVal !== undefined ? optVal : fallback);
 
-      return {
-        liveSearch:      pick(data.liveSearch,      options.liveSearch,      false),
-        maxSelections:   pick(data.maxSelections,   options.maxSelections,   options.maxItems !== undefined ? options.maxItems : Infinity),
-        placeholder:     pick(data.placeholder,     options.placeholder,     ''), // empty default — init section decides whether to show placeholder
-        showClearButton: pick(data.showClearButton, options.showClearButton, options.clearAllButton !== undefined ? options.clearAllButton : (options.allowEmpty !== undefined ? options.allowEmpty : false)),
-        selectOptgroups: pick(data.selectOptgroups, options.selectOptgroups, false),
-        selectAllOption: pick(data.selectAllOption, options.selectAllOption, false),
-        closeOnSelect:   pick(data.closeOnSelect,   options.closeOnSelect,   true),
-        defaultText:     pick(data.defaultText,     options.defaultText,     'Select...'),
-        ajax:            options.ajax || null,
-        onItemAdd:       typeof options.onItemAdd    === 'function' ? options.onItemAdd    : null,
-        onItemDelete:    typeof options.onItemDelete === 'function' ? options.onItemDelete : null,
-      };
+        const placeholderDefault = pick(data.placeholder,     options.placeholder,     '');
+        let showClearButtonDefault = false;
+        if (placeholderDefault)
+            showClearButtonDefault = true;
+        const config = {
+            liveSearch:      pick(data.liveSearch,      options.liveSearch,      false),
+            maxSelections:   pick(data.maxSelections,   options.maxSelections,   options.maxItems !== undefined ? options.maxItems : Infinity),
+            placeholder:     placeholderDefault,
+            showClearButton: pick(data.showClearButton, options.showClearButton, options.clearAllButton !== undefined ? options.clearAllButton : (options.allowEmpty !== undefined ? options.allowEmpty : showClearButtonDefault)),
+            selectOptgroups: pick(data.selectOptgroups, options.selectOptgroups, false),
+            selectAllOption: pick(data.selectAllOption, options.selectAllOption, false),
+            closeOnSelect:   pick(data.closeOnSelect,   options.closeOnSelect,   true),
+            defaultText:     pick(data.defaultText,     options.defaultText,     'Select...'),
+            ajax:            options.ajax || null,
+            onItemAdd:       typeof options.onItemAdd    === 'function' ? options.onItemAdd    : null,
+            onItemDelete:    typeof options.onItemDelete === 'function' ? options.onItemDelete : null,
+        };
+
+        return config;
     }
 
     _readDataAttributes(sel) {
