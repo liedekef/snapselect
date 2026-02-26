@@ -31,7 +31,7 @@ fi
 # Create a zip of the new release for GitHub (but not for npm)
 cd $basedir/..
 pwd
-zip -r snapselect.zip snapselect -x '*.git*' '*.less' -x 'snapselect/dist*' -x 'snapselect/script*' -x 'snapselect/*json' -x 'snapselect/.npmignore'
+zip snapselect.zip snapselect/dist/css/* snapselect/dist/js/* snapselect/VERSION snapselect/LICENSE snapselect/README.md
 mv snapselect.zip $basedir/dist/
 
 cd $basedir
