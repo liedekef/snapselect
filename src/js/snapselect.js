@@ -289,10 +289,27 @@
       this._syncDisabled();
       this._disabledObserver = new MutationObserver(() => this._syncDisabled());
       this._disabledObserver.observe(this.select, { attributes: true, attributeFilter: ['disabled'] });
+
+      // Also observe any ancestor <fieldset> elements so that adding/removing
+      // `disabled` on a fieldset is reflected in the custom UI immediately.
+      this._fieldsetObservers = [];
+      let el = this.select.parentElement;
+      while (el) {
+        if (el.tagName === 'FIELDSET') {
+          const obs = new MutationObserver(() => this._syncDisabled());
+          obs.observe(el, { attributes: true, attributeFilter: ['disabled'] });
+          this._fieldsetObservers.push(obs);
+        }
+        el = el.parentElement;
+      }
+    }
+
+    _isDisabled() {
+      return this.select.disabled || !!this.select.closest('fieldset:disabled');
     }
 
     _syncDisabled() {
-      if (this.select.disabled) {
+      if (this._isDisabled()) {
         this._customSelect.classList.add('snap-select-disabled');
         this._selectedContainer.setAttribute('tabindex', '-1');
         if (this._itemsContainer) this._closeDropdown();
@@ -311,6 +328,7 @@
               this._closeDropdown();
               observer.disconnect();
               this._disabledObserver.disconnect();
+              (this._fieldsetObservers || []).forEach(o => o.disconnect());
             }
           });
         });
@@ -357,7 +375,7 @@
           removeBtn.textContent = '×';
           removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (select.disabled) return;
+            if (this._isDisabled()) return;
             vals.delete(val);
             const cb = this._checkboxMap.get(val.toString());
             if (cb) cb.checked = false;
@@ -375,7 +393,7 @@
           clearAll.textContent = '×';
           clearAll.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (select.disabled) return;
+            if (this._isDisabled()) return;
             vals.clear();
             this._checkboxMap.forEach(cb => cb.checked = false);
             this._updateMultipleDisplay();
@@ -400,7 +418,7 @@
         removeBtn.style.float = 'right';
         removeBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          if (select.disabled) return;
+          if (this._isDisabled()) return;
           const prevValue  = select.value;
           const prevOption = select.querySelector(`option[value="${prevValue}"]`);
           select.value = '';
@@ -422,7 +440,7 @@
     // ── Dropdown open/close ────────────────────────────────────────────────────
     _toggleDropdown(e) {
       if (e) e.stopPropagation();
-      if (this.select.disabled) return;
+      if (this._isDisabled()) return;
       this._itemsContainer ? this._closeDropdown() : this._openDropdown();
     }
 
@@ -970,7 +988,7 @@
 
     // ── Public API ─────────────────────────────────────────────────────────────
     clear() {
-      if (this.select.disabled) return;
+      if (this._isDisabled()) return;
       if (this.isMultiple) {
         this._selectedValues.clear();
         this._checkboxMap.forEach(cb => cb.checked = false);
