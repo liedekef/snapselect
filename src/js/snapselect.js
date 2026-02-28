@@ -305,7 +305,10 @@
     }
 
     _isDisabled() {
-      return this.select.disabled || !!this.select.closest('fieldset:disabled');
+      // We use the pseudo class :disabled as check, since that gets set to true if the fieldset is disabled too
+      // this.select.disabled is not set to true if the fieldset is disabled
+      return this.select.matches(':disabled');
+      // this works too but is uglier: return this.select.disabled || !!this.select.closest('fieldset:disabled');
     }
 
     _syncDisabled() {
