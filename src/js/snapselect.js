@@ -101,6 +101,11 @@
             this._wireValidation();
             this._wireDisabled();
             this._wireDOMCleanup();
+
+            // positioning handlers
+            this._reposition    = () => this._positionDropdown();
+            this._scrollHandler = (e) => { if (!this._itemsContainer?.contains(e.target)) this._positionDropdown(); };
+            this._resizeObserver = new ResizeObserver(this._reposition);
         }
 
         // ── Config ─────────────────────────────────────────────────────────────────
@@ -481,9 +486,6 @@
             this._itemsContainer.addEventListener('keydown', (e) => this._onDropdownKeydown(e));
             this._dropdownOverlay.addEventListener('click',   () => this._closeDropdown());
 
-            this._reposition    = () => this._positionDropdown();
-            this._scrollHandler = (e) => { if (!this._itemsContainer?.contains(e.target)) this._positionDropdown(); };
-            this._resizeObserver = new ResizeObserver(this._reposition);
             window.addEventListener('scroll', this._scrollHandler, true);
             window.addEventListener('resize', this._reposition);
             this._resizeObserver.observe(this._selectedContainer);
@@ -499,9 +501,6 @@
             window.removeEventListener('scroll', this._scrollHandler, true);
             window.removeEventListener('resize', this._reposition);
             this._resizeObserver.disconnect();
-            this._reposition = null;
-            this._scrollHandler = null;
-            this._resizeObserver = null;
             this._customSelect.setAttribute('aria-expanded', 'false');
         }
 
