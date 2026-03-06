@@ -108,6 +108,21 @@
             this._resizeObserver = new ResizeObserver(this._reposition);
         }
 
+        // Destructor
+        destroy() {
+            if (this._itemsContainer) this._closeDropdown();
+
+            this._resizeObserver?.disconnect();
+            this._resizeObserver = null;
+            this._reposition = null;
+            this._scrollHandler = null;
+
+            this._customSelect = null;
+            this._selectedContainer = null;
+            this._itemsContainer = null;
+            this.select = null;
+        }
+
         // ── Config ─────────────────────────────────────────────────────────────────
         _buildConfig(options) {
             const data = this._readDataAttributes(this.select);
@@ -500,7 +515,7 @@
             if (this._dropdownOverlay){ this._dropdownOverlay.remove(); this._dropdownOverlay = null; }
             window.removeEventListener('scroll', this._scrollHandler, true);
             window.removeEventListener('resize', this._reposition);
-            this._resizeObserver.disconnect();
+            this._resizeObserver.unobserve(this._selectedContainer);
             this._customSelect.setAttribute('aria-expanded', 'false');
         }
 
