@@ -117,6 +117,11 @@
             this._reposition = null;
             this._scrollHandler = null;
 
+            this._disabledObserver?.disconnect();
+            this._disabledObserver = null;
+            (this._fieldsetObservers || []).forEach(o => o.disconnect());
+            this._fieldsetObservers = null;
+
             this._customSelect = null;
             this._selectedContainer = null;
             this._itemsContainer = null;
