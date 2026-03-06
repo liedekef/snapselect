@@ -1,1030 +1,1026 @@
 (function () {
-  /**
-   * SnapSelect - A custom select box plugin with various customization options.
-   *
-   * @param {HTMLElement} element - The select element to be enhanced.
-   * @param {Object} options - An object containing configuration options.
-   *
-   * Core Options:
-   * - liveSearch (boolean): Enables search functionality within the dropdown.
-   * - maxSelections (number): Limits the number of selections (for multiple select).
-   *   Alias: maxItems — both the option `maxItems` and the attribute `data-max-items` are
-   *   accepted and behave identically to maxSelections / data-max-selections.
-   * - placeholder (string): Placeholder text for the select box.
-   * - defaultText (string): the text shown on the select box if the first option value and string are empty (placeholder takes precedence if present)
-   * - showClearButton (boolean): Shows a button to clear the current selection (works for both
-   *   single and multiple select). Aliases: clearAllButton, allowEmpty (both deprecated).
-   * - selectOptgroups (boolean): Allows selecting all options within an optgroup.
-   * - selectAllOption (boolean): Adds a "Select All" option to the dropdown (for multiple select).
-   * - closeOnSelect (boolean): Closes the dropdown after selecting an option (single-select only).
-   * - onItemAdd (function): Called when an item is selected. Receives (value, text).
-   * - onItemDelete (function): Called when an item is deselected. Receives (value, text).
-   *
-   * AJAX + Paging Options:
-   * - ajax (object): Enables remote data loading.
-   *     - url (string|function): Endpoint URL, or a function(searchTerm, page) => string.
-   *     - data (object|function): Optional. Plain object or function(searchTerm, page) => object of extra params.
-   *     - method (string): HTTP method, default 'GET'.
-   *     - processResults (function): Maps the raw response to { results: [{id, text, ...extras}], hasMore: bool }.
-   *       Any properties beyond `id` and `text` are stored as data-* attributes on the underlying <option>
-   *       element, making them accessible in onItemAdd/onItemDelete via
-   *       this.querySelector(`option[value="${value}"]`).dataset.
-   *     - delay (number): Debounce delay in ms for search input, default 300.
-   *     - minimumInputLength (number): Minimum characters before fetching, default 0.
-   *     - cache (boolean): Cache results per (search+page) key. Default: `false` if `url` or `data` is a function, `true` otherwise.
-   *     - headers (object): Extra request headers.
-   *     - pagesize (number): Items per page sent to the server, default 20.
-   *     - loadingText (string): Text shown while loading, default 'Loading...'.
-   *     - noResultsText (string): Text shown when no results found, default 'No results found'.
-   *     - errorText (string): Text shown on fetch error, default 'Error loading results'.
-   *
-   * Country → State cascade example:
-   *
-   *   <select id="country" data-placeholder="Select country..."></select>
-   *   <select id="state"   data-placeholder="Select state..." disabled></select>
-   *
-   *   const countrySelect = SnapSelect('#country', {
-   *     ajax: {
-   *       url: '/api/countries',
-   *       processResults: r => ({ results: r.data, hasMore: r.meta.hasMore })
-   *     }
-   *   });
-   *
-   *   document.getElementById('country').addEventListener('change', function() {
-   *     const stateEl = document.getElementById('state');
-   *     stateEl.disabled = !this.value;
-   *     SnapSelect('#state', {
-   *       ajax: {
-   *         url: (search, page) => `/api/states?country=${this.value}&q=${search}&page=${page}`,
-   *         processResults: r => ({ results: r.data, hasMore: r.meta.hasMore })
-   *       }
-   *     });
-   *   });
-   */
-  class SnapSelect {
+    /**
+     * SnapSelect - A custom select box plugin with various customization options.
+     *
+     * @param {HTMLElement} element - The select element to be enhanced.
+     * @param {Object} options - An object containing configuration options.
+     *
+     * Core Options:
+     * - liveSearch (boolean): Enables search functionality within the dropdown.
+     * - maxSelections (number): Limits the number of selections (for multiple select).
+     *   Alias: maxItems — both the option `maxItems` and the attribute `data-max-items` are
+     *   accepted and behave identically to maxSelections / data-max-selections.
+     * - placeholder (string): Placeholder text for the select box.
+     * - defaultText (string): the text shown on the select box if the first option value and string are empty (placeholder takes precedence if present)
+     * - showClearButton (boolean): Shows a button to clear the current selection (works for both
+     *   single and multiple select). Aliases: clearAllButton, allowEmpty (both deprecated).
+     * - selectOptgroups (boolean): Allows selecting all options within an optgroup.
+     * - selectAllOption (boolean): Adds a "Select All" option to the dropdown (for multiple select).
+     * - closeOnSelect (boolean): Closes the dropdown after selecting an option (single-select only).
+     * - onItemAdd (function): Called when an item is selected. Receives (value, text).
+     * - onItemDelete (function): Called when an item is deselected. Receives (value, text).
+     *
+     * AJAX + Paging Options:
+     * - ajax (object): Enables remote data loading.
+     *     - url (string|function): Endpoint URL, or a function(searchTerm, page) => string.
+     *     - data (object|function): Optional. Plain object or function(searchTerm, page) => object of extra params.
+     *     - method (string): HTTP method, default 'GET'.
+     *     - processResults (function): Maps the raw response to { results: [{id, text, ...extras}], hasMore: bool }.
+     *       Any properties beyond `id` and `text` are stored as data-* attributes on the underlying <option>
+     *       element, making them accessible in onItemAdd/onItemDelete via
+     *       this.querySelector(`option[value="${value}"]`).dataset.
+     *     - delay (number): Debounce delay in ms for search input, default 300.
+     *     - minimumInputLength (number): Minimum characters before fetching, default 0.
+     *     - cache (boolean): Cache results per (search+page) key. Default: `false` if `url` or `data` is a function, `true` otherwise.
+     *     - headers (object): Extra request headers.
+     *     - pagesize (number): Items per page sent to the server, default 20.
+     *     - loadingText (string): Text shown while loading, default 'Loading...'.
+     *     - noResultsText (string): Text shown when no results found, default 'No results found'.
+     *     - errorText (string): Text shown on fetch error, default 'Error loading results'.
+     *
+     * Country → State cascade example:
+     *
+     *   <select id="country" data-placeholder="Select country..."></select>
+     *   <select id="state"   data-placeholder="Select state..." disabled></select>
+     *
+     *   const countrySelect = SnapSelect('#country', {
+     *     ajax: {
+     *       url: '/api/countries',
+     *       processResults: r => ({ results: r.data, hasMore: r.meta.hasMore })
+     *     }
+     *   });
+     *
+     *   document.getElementById('country').addEventListener('change', function() {
+     *     const stateEl = document.getElementById('state');
+     *     stateEl.disabled = !this.value;
+     *     SnapSelect('#state', {
+     *       ajax: {
+     *         url: (search, page) => `/api/states?country=${this.value}&q=${search}&page=${page}`,
+     *         processResults: r => ({ results: r.data, hasMore: r.meta.hasMore })
+     *       }
+     *     });
+     *   });
+     */
+    class SnapSelect {
 
-    // ── Constructor ────────────────────────────────────────────────────────────
-    constructor(element, options = {}) {
-      this.select     = element;
-      this.isMultiple = element.multiple;
-      this.config     = this._buildConfig(options);
+        // ── Constructor ────────────────────────────────────────────────────────────
+        constructor(element, options = {}) {
+            this.select     = element;
+            this.isMultiple = element.multiple;
+            this.config     = this._buildConfig(options);
 
-      if (this.config.maxSelections === 1) this.isMultiple = false;
+            if (this.config.maxSelections === 1) this.isMultiple = false;
 
-      // ── AJAX state ───────────────────────────────────────────────────────────
-      this._ajaxCache      = new Map();
-      this._currentPage    = 1;
-      this._currentSearch  = '';
-      this._hasMorePages   = false;
-      this._isLoadingAjax  = false;
-      this._debounceTimer  = null;
-      this._activeRequest  = null;
+            // ── AJAX state ───────────────────────────────────────────────────────────
+            this._ajaxCache      = new Map();
+            this._currentPage    = 1;
+            this._currentSearch  = '';
+            this._hasMorePages   = false;
+            this._isLoadingAjax  = false;
+            this._debounceTimer  = null;
+            this._activeRequest  = null;
 
-      // ── Dropdown DOM refs ────────────────────────────────────────────────────
-      this._itemsContainer   = null;
-      this._dropdownOverlay  = null;
-      this._searchInput      = null;
-      this._clearSearchBtn   = null;
-      this._loadingIndicator = null;
-      this._infiniteAnchor   = null;
-      this._infiniteObserver = null;
+            // ── Dropdown DOM refs ────────────────────────────────────────────────────
+            this._itemsContainer   = null;
+            this._dropdownOverlay  = null;
+            this._searchInput      = null;
+            this._clearSearchBtn   = null;
+            this._loadingIndicator = null;
+            this._infiniteAnchor   = null;
+            this._infiniteObserver = null;
 
-      // ── Selection state ──────────────────────────────────────────────────────
-      this._selectedValues = new Set();
-      this._checkboxMap    = new Map();
+            // ── Selection state ──────────────────────────────────────────────────────
+            this._selectedValues = new Set();
+            this._checkboxMap    = new Map();
 
-      this._normaliseAjaxConfig();
-      this._prepareEmptyOption();
-      this._buildDOM();
-      this._initSelection();
-      this._wireLabels();
-      this._wireValidation();
-      this._wireDisabled();
-      this._wireDOMCleanup();
-    }
-
-    // ── Config ─────────────────────────────────────────────────────────────────
-    _buildConfig(options) {
-        const data = this._readDataAttributes(this.select);
-        const pick = (dataVal, optVal, fallback) =>
-            dataVal !== undefined ? dataVal : (optVal !== undefined ? optVal : fallback);
-
-        const placeholderDefault = pick(data.placeholder,     options.placeholder,     '');
-        let showClearButtonDefault = false;
-        if (placeholderDefault)
-            showClearButtonDefault = true;
-        const config = {
-            liveSearch:      pick(data.liveSearch,      options.liveSearch,      false),
-            maxSelections:   pick(data.maxSelections,   options.maxSelections,   options.maxItems !== undefined ? options.maxItems : Infinity),
-            placeholder:     placeholderDefault,
-            showClearButton: pick(data.showClearButton, options.showClearButton, options.clearAllButton !== undefined ? options.clearAllButton : (options.allowEmpty !== undefined ? options.allowEmpty : showClearButtonDefault)),
-            selectOptgroups: pick(data.selectOptgroups, options.selectOptgroups, false),
-            selectAllOption: pick(data.selectAllOption, options.selectAllOption, false),
-            closeOnSelect:   pick(data.closeOnSelect,   options.closeOnSelect,   true),
-            defaultText:     pick(data.defaultText,     options.defaultText,     'Select...'),
-            ajax:            options.ajax || null,
-            onItemAdd:       typeof options.onItemAdd    === 'function' ? options.onItemAdd    : null,
-            onItemDelete:    typeof options.onItemDelete === 'function' ? options.onItemDelete : null,
-        };
-
-        return config;
-    }
-
-    _readDataAttributes(sel) {
-      const bool = (...attrs) => {
-        for (const attr of attrs) {
-          if (sel.hasAttribute(attr)) return sel.getAttribute(attr) === 'true';
+            this._normaliseAjaxConfig();
+            this._prepareEmptyOption();
+            this._buildDOM();
+            this._initSelection();
+            this._wireLabels();
+            this._wireValidation();
+            this._wireDisabled();
+            this._wireDOMCleanup();
         }
-        return undefined;
-      };
-      const int  = (...attrs) => {
-        for (const attr of attrs) {
-          if (sel.hasAttribute(attr)) return parseInt(sel.getAttribute(attr));
+
+        // ── Config ─────────────────────────────────────────────────────────────────
+        _buildConfig(options) {
+            const data = this._readDataAttributes(this.select);
+            const pick = (dataVal, optVal, fallback) =>
+                dataVal !== undefined ? dataVal : (optVal !== undefined ? optVal : fallback);
+
+            const placeholderDefault = pick(data.placeholder,     options.placeholder,     '');
+            let showClearButtonDefault = false;
+            if (placeholderDefault)
+                showClearButtonDefault = true;
+            const config = {
+                liveSearch:      pick(data.liveSearch,      options.liveSearch,      false),
+                maxSelections:   pick(data.maxSelections,   options.maxSelections,   options.maxItems !== undefined ? options.maxItems : Infinity),
+                placeholder:     placeholderDefault,
+                showClearButton: pick(data.showClearButton, options.showClearButton, options.clearAllButton !== undefined ? options.clearAllButton : (options.allowEmpty !== undefined ? options.allowEmpty : showClearButtonDefault)),
+                selectOptgroups: pick(data.selectOptgroups, options.selectOptgroups, false),
+                selectAllOption: pick(data.selectAllOption, options.selectAllOption, false),
+                closeOnSelect:   pick(data.closeOnSelect,   options.closeOnSelect,   true),
+                defaultText:     pick(data.defaultText,     options.defaultText,     'Select...'),
+                ajax:            options.ajax || null,
+                onItemAdd:       typeof options.onItemAdd    === 'function' ? options.onItemAdd    : null,
+                onItemDelete:    typeof options.onItemDelete === 'function' ? options.onItemDelete : null,
+            };
+
+            return config;
         }
-        return undefined;
-      };
-      const str  = (attr) => sel.hasAttribute(attr) ? sel.getAttribute(attr) : undefined;
 
-      return {
-        liveSearch:      bool('data-live-search'),
-        maxSelections:   int('data-max-selections', 'data-max-items'),
-        placeholder:     str('data-placeholder'),
-        showClearButton: bool('data-show-clear-button', 'data-clear-all-button', 'data-allow-empty'),
-        selectOptgroups: bool('data-select-optgroups'),
-        selectAllOption: bool('data-select-all-option'),
-        closeOnSelect:   bool('data-close-on-select'),
-        defaultText:     str('data-default-text'),
-      };
-    }
+        _readDataAttributes(sel) {
+            const bool = (...attrs) => {
+                for (const attr of attrs) {
+                    if (sel.hasAttribute(attr)) return sel.getAttribute(attr) === 'true';
+                }
+                return undefined;
+            };
+            const int  = (...attrs) => {
+                for (const attr of attrs) {
+                    if (sel.hasAttribute(attr)) return parseInt(sel.getAttribute(attr));
+                }
+                return undefined;
+            };
+            const str  = (attr) => sel.hasAttribute(attr) ? sel.getAttribute(attr) : undefined;
 
-    _normaliseAjaxConfig() {
-      if (!this.config.ajax) return;
-      const defaults = {
-        method: 'GET', delay: 300, minimumInputLength: 0,
-        cache:  !(typeof this.config.ajax.url === 'function' || typeof this.config.ajax.data === 'function'),
-        headers: {}, data: null, processResults: null, pagesize: 20,
-        loadingText: 'Loading...', noResultsText: 'No results found', errorText: 'Error loading results',
-      };
-      const userAjax = Object.fromEntries(
-        Object.entries(this.config.ajax).filter(([, v]) => v !== undefined)
-      );
-      this.config.ajax = Object.assign(defaults, userAjax);
-    }
-
-    // ── Empty option setup ─────────────────────────────────────────────────────
-    _prepareEmptyOption() {
-      const { select, config, isMultiple } = this;
-      if (config.ajax) {
-        if (!isMultiple) {
-          const opt = document.createElement('option');
-          opt.value = '';
-          select.prepend(opt);
+            return {
+                liveSearch:      bool('data-live-search'),
+                maxSelections:   int('data-max-selections', 'data-max-items'),
+                placeholder:     str('data-placeholder'),
+                showClearButton: bool('data-show-clear-button', 'data-clear-all-button', 'data-allow-empty'),
+                selectOptgroups: bool('data-select-optgroups'),
+                selectAllOption: bool('data-select-all-option'),
+                closeOnSelect:   bool('data-close-on-select'),
+                defaultText:     str('data-default-text'),
+            };
         }
-      } else {
-        if (!isMultiple && config.placeholder && select.options[0] && select.options[0].value !== '') {
-          const opt = document.createElement('option');
-          opt.value    = '';
-          opt.selected = !select.querySelector('option[selected]');
-          select.prepend(opt);
+
+        _normaliseAjaxConfig() {
+            if (!this.config.ajax) return;
+            const defaults = {
+                method: 'GET', delay: 300, minimumInputLength: 0,
+                cache:  !(typeof this.config.ajax.url === 'function' || typeof this.config.ajax.data === 'function'),
+                headers: {}, data: null, processResults: null, pagesize: 20,
+                loadingText: 'Loading...', noResultsText: 'No results found', errorText: 'Error loading results',
+            };
+            const userAjax = Object.fromEntries(
+                Object.entries(this.config.ajax).filter(([, v]) => v !== undefined)
+            );
+            this.config.ajax = Object.assign(defaults, userAjax);
         }
-      }
-    }
 
-    // ── DOM construction ───────────────────────────────────────────────────────
-    _buildDOM() {
-      const { select } = this;
-
-      this._customSelect = document.createElement('div');
-      this._customSelect.classList.add('snap-select');
-      this._customSelect.setAttribute('role', 'combobox');
-      this._customSelect.setAttribute('aria-expanded', 'false');
-      this._customSelect.setAttribute('aria-haspopup', 'listbox');
-      this._customSelect.style.width    = select.style.width;
-      this._customSelect.style.minWidth = select.style.minWidth;
-
-      select.parentNode.insertBefore(this._customSelect, select);
-      this._customSelect.appendChild(select);
-
-      this._selectedContainer = document.createElement('div');
-      this._selectedContainer.classList.add('snap-select-selected');
-      this._selectedContainer.setAttribute('aria-live', 'polite');
-      this._selectedContainer.setAttribute('tabindex', '0');
-      this._customSelect.appendChild(this._selectedContainer);
-
-      this._tagContainer = document.createElement('div');
-      this._tagContainer.classList.add('snap-select-tags');
-      this._selectedContainer.appendChild(this._tagContainer);
-
-      this._selectedContainer.addEventListener('click',   (e) => this._toggleDropdown(e));
-      this._selectedContainer.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
-          e.preventDefault();
-          this._toggleDropdown();
-        } else if (e.key === 'Escape' && this._itemsContainer) {
-          this._closeDropdown();
-        }
-      });
-    }
-
-    // ── Initialise selection display ───────────────────────────────────────────
-    _initSelection() {
-      const { select, config, isMultiple } = this;
-      const firstOpt            = select.options[0];
-      const hasEmptyFirstOption = firstOpt && firstOpt.value === '';
-
-      if (hasEmptyFirstOption) {
-        config.showClearButton = true;
-        const firstOptText = firstOpt.textContent.trim();
-        if (firstOptText) config.placeholder = firstOptText;
-        if (isMultiple) select.remove(0); // safe to remove for multiple; not for single (form submission)
-      }
-
-      if (isMultiple) {
-        Array.from(select.selectedOptions).forEach(opt => this._selectedValues.add(opt.value));
-        this._updateMultipleDisplay();
-      } else {
-        const selectedOption = select.querySelector('option[selected]');
-        if (selectedOption && selectedOption.value !== '') {
-          this._updateSingleSelect(selectedOption.textContent);
-        } else if (hasEmptyFirstOption || config.ajax || config.placeholder) {
-          this._updateSingleSelect(config.placeholder || config.defaultText, true);
-        } else if (firstOpt) {
-          this._updateSingleSelect(firstOpt.textContent);
-        }
-      }
-    }
-
-    // ── Label wiring ───────────────────────────────────────────────────────────
-    _wireLabels() {
-      if (!this.select.id) return;
-      document.querySelectorAll(`label[for="${this.select.id}"]`).forEach(label => {
-        label.addEventListener('click', (e) => {
-          e.preventDefault();
-          this._selectedContainer.focus();
-        });
-      });
-    }
-
-    // ── Form validation ────────────────────────────────────────────────────────
-    _wireValidation() {
-      if (!this.select.required) return;
-      this.select.addEventListener('invalid', (e) => {
-        e.preventDefault();
-        this._selectedContainer.classList.add('snap-select-invalid');
-        if (!this._customSelect.nextElementSibling?.classList.contains('snap-select-validation-message')) {
-          const msg = document.createElement('div');
-          msg.classList.add('snap-select-validation-message');
-          msg.textContent = this.select.validationMessage;
-          this._customSelect.insertAdjacentElement('afterend', msg);
-          requestAnimationFrame(() => {
-            const offsetTop = msg.getBoundingClientRect().top + window.pageYOffset;
-            window.scrollTo({ top: offsetTop - window.innerHeight / 2 + msg.offsetHeight / 2, behavior: 'smooth' });
-          });
-        }
-      });
-    }
-
-    // ── Disabled state ─────────────────────────────────────────────────────────
-    _wireDisabled() {
-      this._syncDisabled();
-      this._disabledObserver = new MutationObserver(() => this._syncDisabled());
-      this._disabledObserver.observe(this.select, { attributes: true, attributeFilter: ['disabled'] });
-
-      // Also observe any ancestor <fieldset> elements so that adding/removing
-      // `disabled` on a fieldset is reflected in the custom UI immediately.
-      this._fieldsetObservers = [];
-      let el = this.select.parentElement;
-      while (el) {
-        if (el.tagName === 'FIELDSET') {
-          const obs = new MutationObserver(() => this._syncDisabled());
-          obs.observe(el, { attributes: true, attributeFilter: ['disabled'] });
-          this._fieldsetObservers.push(obs);
-        }
-        el = el.parentElement;
-      }
-    }
-
-    _isDisabled() {
-      // We use the pseudo class :disabled as check, since that gets set to true if the fieldset is disabled too
-      // this.select.disabled is not set to true if the fieldset is disabled
-      return this.select.matches(':disabled');
-      // this works too but is uglier: return this.select.disabled || !!this.select.closest('fieldset:disabled');
-    }
-
-    _syncDisabled() {
-      if (this._isDisabled()) {
-        this._customSelect.classList.add('snap-select-disabled');
-        this._selectedContainer.setAttribute('tabindex', '-1');
-        if (this._itemsContainer) this._closeDropdown();
-      } else {
-        this._customSelect.classList.remove('snap-select-disabled');
-        this._selectedContainer.setAttribute('tabindex', '0');
-      }
-    }
-
-    // ── DOM cleanup observer ───────────────────────────────────────────────────
-    _wireDOMCleanup() {
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          mutation.removedNodes.forEach((node) => {
-            if (node === this._customSelect || (node.contains && node.contains(this._customSelect))) {
-              this._closeDropdown();
-              observer.disconnect();
-              this._disabledObserver.disconnect();
-              (this._fieldsetObservers || []).forEach(o => o.disconnect());
+        // ── Empty option setup ─────────────────────────────────────────────────────
+        _prepareEmptyOption() {
+            const { select, config, isMultiple } = this;
+            if (config.ajax) {
+                if (!isMultiple) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    select.prepend(opt);
+                }
+            } else {
+                if (!isMultiple && config.placeholder && select.options[0] && select.options[0].value !== '') {
+                    const opt = document.createElement('option');
+                    opt.value    = '';
+                    opt.selected = !select.querySelector('option[selected]');
+                    select.prepend(opt);
+                }
             }
-          });
-        });
-      });
-      setTimeout(() => {
-        if (this._customSelect.parentNode) {
-          observer.observe(this._customSelect.parentNode, { childList: true, subtree: true });
         }
-      }, 0);
-    }
 
-    // ── Display helpers ────────────────────────────────────────────────────────
-    _updateMultipleDisplay() {
-      const { select, config } = this;
-      const vals = this._selectedValues;
-      this._tagContainer.innerHTML = '';
+        // ── DOM construction ───────────────────────────────────────────────────────
+        _buildDOM() {
+            const { select } = this;
 
-      Array.from(select.options).forEach(opt => { opt.selected = vals.has(opt.value); });
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-      select.dispatchEvent(new Event('input',  { bubbles: true }));
+            this._customSelect = document.createElement('div');
+            this._customSelect.classList.add('snap-select');
+            this._customSelect.setAttribute('role', 'combobox');
+            this._customSelect.setAttribute('aria-expanded', 'false');
+            this._customSelect.setAttribute('aria-haspopup', 'listbox');
+            this._customSelect.style.width    = select.style.width;
+            this._customSelect.style.minWidth = select.style.minWidth;
 
-      if (select.required && vals.size > 0) {
-        this._selectedContainer.classList.remove('snap-select-invalid');
-        const msg = this._customSelect.nextElementSibling;
-        if (msg?.classList.contains('snap-select-validation-message')) msg.remove();
-      }
+            select.parentNode.insertBefore(this._customSelect, select);
+            this._customSelect.appendChild(select);
 
-      if (vals.size === 0) {
-        const placeholder = document.createElement('div');
-        placeholder.classList.add('snap-select-placeholder');
-        placeholder.textContent = config.placeholder || config.defaultText;
-        this._tagContainer.appendChild(placeholder);
-      } else {
-        vals.forEach(val => {
-          const option = select.querySelector(`option[value="${val}"]`);
-          if (!option) return;
+            this._selectedContainer = document.createElement('div');
+            this._selectedContainer.classList.add('snap-select-selected');
+            this._selectedContainer.setAttribute('aria-live', 'polite');
+            this._selectedContainer.setAttribute('tabindex', '0');
+            this._customSelect.appendChild(this._selectedContainer);
 
-          const tag = document.createElement('div');
-          tag.classList.add('snap-select-tag');
-          tag.textContent = option.textContent;
+            this._tagContainer = document.createElement('div');
+            this._tagContainer.classList.add('snap-select-tags');
+            this._selectedContainer.appendChild(this._tagContainer);
 
-          const removeBtn = document.createElement('span');
-          removeBtn.classList.add('snap-select-remove');
-          removeBtn.textContent = '×';
-          removeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
+            this._selectedContainer.addEventListener('click',   (e) => this._toggleDropdown(e));
+            this._selectedContainer.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this._toggleDropdown();
+                } else if (e.key === 'Escape' && this._itemsContainer) {
+                    this._closeDropdown();
+                }
+            });
+        }
+
+        // ── Initialise selection display ───────────────────────────────────────────
+        _initSelection() {
+            const { select, config, isMultiple } = this;
+            const firstOpt            = select.options[0];
+            const hasEmptyFirstOption = firstOpt && firstOpt.value === '';
+
+            if (hasEmptyFirstOption) {
+                config.showClearButton = true;
+                const firstOptText = firstOpt.textContent.trim();
+                if (firstOptText) config.placeholder = firstOptText;
+                if (isMultiple) select.remove(0); // safe to remove for multiple; not for single (form submission)
+            }
+
+            if (isMultiple) {
+                Array.from(select.selectedOptions).forEach(opt => this._selectedValues.add(opt.value));
+                this._updateMultipleDisplay();
+            } else {
+                const selectedOption = select.querySelector('option[selected]');
+                if (selectedOption && selectedOption.value !== '') {
+                    this._updateSingleSelect(selectedOption.textContent);
+                } else if (hasEmptyFirstOption || config.ajax || config.placeholder) {
+                    this._updateSingleSelect(config.placeholder || config.defaultText, true);
+                } else if (firstOpt) {
+                    this._updateSingleSelect(firstOpt.textContent);
+                }
+            }
+        }
+
+        // ── Label wiring ───────────────────────────────────────────────────────────
+        _wireLabels() {
+            if (!this.select.id) return;
+            document.querySelectorAll(`label[for="${this.select.id}"]`).forEach(label => {
+                label.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this._selectedContainer.focus();
+                });
+            });
+        }
+
+        // ── Form validation ────────────────────────────────────────────────────────
+        _wireValidation() {
+            if (!this.select.required) return;
+            this.select.addEventListener('invalid', (e) => {
+                e.preventDefault();
+                this._selectedContainer.classList.add('snap-select-invalid');
+                if (!this._customSelect.nextElementSibling?.classList.contains('snap-select-validation-message')) {
+                    const msg = document.createElement('div');
+                    msg.classList.add('snap-select-validation-message');
+                    msg.textContent = this.select.validationMessage;
+                    this._customSelect.insertAdjacentElement('afterend', msg);
+                    requestAnimationFrame(() => {
+                        const offsetTop = msg.getBoundingClientRect().top + window.pageYOffset;
+                        window.scrollTo({ top: offsetTop - window.innerHeight / 2 + msg.offsetHeight / 2, behavior: 'smooth' });
+                    });
+                }
+            });
+        }
+
+        // ── Disabled state ─────────────────────────────────────────────────────────
+        _wireDisabled() {
+            this._syncDisabled();
+            this._disabledObserver = new MutationObserver(() => this._syncDisabled());
+            this._disabledObserver.observe(this.select, { attributes: true, attributeFilter: ['disabled'] });
+
+            // Also observe any ancestor <fieldset> elements so that adding/removing
+            // `disabled` on a fieldset is reflected in the custom UI immediately.
+            this._fieldsetObservers = [];
+            let el = this.select.parentElement;
+            while (el) {
+                if (el.tagName === 'FIELDSET') {
+                    const obs = new MutationObserver(() => this._syncDisabled());
+                    obs.observe(el, { attributes: true, attributeFilter: ['disabled'] });
+                    this._fieldsetObservers.push(obs);
+                }
+                el = el.parentElement;
+            }
+        }
+
+        _isDisabled() {
+            // We use the pseudo class :disabled as check, since that gets set to true if the fieldset is disabled too
+            // this.select.disabled is not set to true if the fieldset is disabled
+            return this.select.matches(':disabled');
+            // this works too but is uglier: return this.select.disabled || !!this.select.closest('fieldset:disabled');
+        }
+
+        _syncDisabled() {
+            if (this._isDisabled()) {
+                this._customSelect.classList.add('snap-select-disabled');
+                this._selectedContainer.setAttribute('tabindex', '-1');
+                if (this._itemsContainer) this._closeDropdown();
+            } else {
+                this._customSelect.classList.remove('snap-select-disabled');
+                this._selectedContainer.setAttribute('tabindex', '0');
+            }
+        }
+
+        // ── DOM cleanup observer ───────────────────────────────────────────────────
+        _wireDOMCleanup() {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.removedNodes.forEach((node) => {
+                        if (node === this._customSelect || (node.contains && node.contains(this._customSelect))) {
+                            this._closeDropdown();
+                            observer.disconnect();
+                            this._disabledObserver.disconnect();
+                            (this._fieldsetObservers || []).forEach(o => o.disconnect());
+                        }
+                    });
+                });
+            });
+            setTimeout(() => {
+                if (this._customSelect.parentNode) {
+                    observer.observe(this._customSelect.parentNode, { childList: true, subtree: true });
+                }
+            }, 0);
+        }
+
+        // ── Display helpers ────────────────────────────────────────────────────────
+        _updateMultipleDisplay() {
+            const { select, config } = this;
+            const vals = this._selectedValues;
+            this._tagContainer.innerHTML = '';
+
+            Array.from(select.options).forEach(opt => { opt.selected = vals.has(opt.value); });
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            select.dispatchEvent(new Event('input',  { bubbles: true }));
+
+            if (select.required && vals.size > 0) {
+                this._selectedContainer.classList.remove('snap-select-invalid');
+                const msg = this._customSelect.nextElementSibling;
+                if (msg?.classList.contains('snap-select-validation-message')) msg.remove();
+            }
+
+            if (vals.size === 0) {
+                const placeholder = document.createElement('div');
+                placeholder.classList.add('snap-select-placeholder');
+                placeholder.textContent = config.placeholder || config.defaultText;
+                this._tagContainer.appendChild(placeholder);
+            } else {
+                vals.forEach(val => {
+                    const option = select.querySelector(`option[value="${val}"]`);
+                    if (!option) return;
+
+                    const tag = document.createElement('div');
+                    tag.classList.add('snap-select-tag');
+                    tag.textContent = option.textContent;
+
+                    const removeBtn = document.createElement('span');
+                    removeBtn.classList.add('snap-select-remove');
+                    removeBtn.textContent = '×';
+                    removeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (this._isDisabled()) return;
+                        vals.delete(val);
+                        const cb = this._checkboxMap.get(val.toString());
+                        if (cb) cb.checked = false;
+                        if (config.onItemDelete) config.onItemDelete.call(select, val, option.textContent);
+                        this._updateMultipleDisplay();
+                    });
+
+                    tag.appendChild(removeBtn);
+                    this._tagContainer.appendChild(tag);
+                });
+
+                if (config.showClearButton) {
+                    const clearAll = document.createElement('span');
+                    clearAll.classList.add('snap-select-clear-all');
+                    clearAll.textContent = '×';
+                    clearAll.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (this._isDisabled()) return;
+                        vals.clear();
+                        this._checkboxMap.forEach(cb => cb.checked = false);
+                        this._updateMultipleDisplay();
+                    });
+                    this._tagContainer.appendChild(clearAll);
+                }
+            }
+        }
+
+        _updateSingleSelect(text, noAllowEmpty = false) {
+            const { select, config } = this;
+            this._tagContainer.innerHTML = '';
+
+            const selectedText = document.createElement('div');
+            selectedText.classList.add('snap-select-single-selected-text');
+            selectedText.textContent = text;
+
+            if (config.showClearButton && !noAllowEmpty) {
+                const removeBtn = document.createElement('span');
+                removeBtn.classList.add('snap-select-clear-all');
+                removeBtn.textContent = '×';
+                removeBtn.style.float = 'right';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (this._isDisabled()) return;
+                    const prevValue  = select.value;
+                    const prevOption = select.querySelector(`option[value="${prevValue}"]`);
+                    select.value = '';
+                    this._updateSingleSelect(config.placeholder || config.defaultText, true);
+                    if (config.onItemDelete && prevValue) {
+                        config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
+                    }
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                    select.dispatchEvent(new Event('input',  { bubbles: true }));
+                });
+                selectedText.appendChild(removeBtn);
+                selectedText.style.display = 'inline-block';
+                selectedText.style.width   = '100%';
+            }
+
+            this._tagContainer.appendChild(selectedText);
+        }
+
+        // ── Dropdown open/close ────────────────────────────────────────────────────
+        _toggleDropdown(e) {
+            if (e) e.stopPropagation();
             if (this._isDisabled()) return;
-            vals.delete(val);
-            const cb = this._checkboxMap.get(val.toString());
-            if (cb) cb.checked = false;
-            if (config.onItemDelete) config.onItemDelete.call(select, val, option.textContent);
-            this._updateMultipleDisplay();
-          });
+            this._itemsContainer ? this._closeDropdown() : this._openDropdown();
+        }
 
-          tag.appendChild(removeBtn);
-          this._tagContainer.appendChild(tag);
-        });
+        _openDropdown() {
+            const { select, config } = this;
 
-        if (config.showClearButton) {
-          const clearAll = document.createElement('span');
-          clearAll.classList.add('snap-select-clear-all');
-          clearAll.textContent = '×';
-          clearAll.addEventListener('click', (e) => {
-            e.stopPropagation();
+            document.querySelectorAll('.snap-select-items').forEach(dd => dd.remove());
+            document.querySelectorAll('.snap-select-overlay').forEach(ov => ov.remove());
+
+            if (!select.children.length && !config.ajax) return;
+
+            if (config.ajax) {
+                this._currentPage   = 1;
+                this._currentSearch = '';
+                this._hasMorePages  = false;
+            }
+
+            this._dropdownOverlay = document.createElement('div');
+            this._dropdownOverlay.classList.add('snap-select-overlay');
+            document.body.appendChild(this._dropdownOverlay);
+
+            this._itemsContainer = document.createElement('div');
+            this._itemsContainer.classList.add('snap-select-items');
+            this._itemsContainer.setAttribute('role', 'listbox');
+            if (this.isMultiple) this._itemsContainer.setAttribute('aria-multiselectable', 'true');
+            this._itemsContainer.setAttribute('tabindex', '-1');
+            this._itemsContainer.style.display = 'block';
+            document.body.appendChild(this._itemsContainer);
+
+            this._populateItems();
+            this._positionDropdown();
+            this._itemsContainer.focus();
+            this._customSelect.setAttribute('aria-expanded', 'true');
+
+            this._itemsContainer.addEventListener('keydown', (e) => this._onDropdownKeydown(e));
+            this._dropdownOverlay.addEventListener('click',   () => this._closeDropdown());
+
+            this._reposition    = () => this._positionDropdown();
+            this._scrollHandler = (e) => { if (!this._itemsContainer?.contains(e.target)) this._positionDropdown(); };
+            this._resizeObserver = new ResizeObserver(this._reposition);
+            window.addEventListener('scroll', this._scrollHandler, true);
+            window.addEventListener('resize', this._reposition);
+            this._resizeObserver.observe(this._selectedContainer);
+        }
+
+        _closeDropdown() {
+            this._selectedContainer.focus();
+            this._cancelInfiniteObserver();
+            if (this._activeRequest)  { this._activeRequest.abort(); this._activeRequest = null; }
+            if (this._debounceTimer)  { clearTimeout(this._debounceTimer); this._debounceTimer = null; }
+            if (this._itemsContainer) { this._itemsContainer.remove(); this._itemsContainer = null; }
+            if (this._dropdownOverlay){ this._dropdownOverlay.remove(); this._dropdownOverlay = null; }
+            window.removeEventListener('scroll', this._scrollHandler, true);
+            window.removeEventListener('resize', this._reposition);
+            this._resizeObserver.disconnect();
+            this._reposition = null;
+            this._scrollHandler = null;
+            this._resizeObserver = null;
+            this._customSelect.setAttribute('aria-expanded', 'false');
+        }
+
+        _onDropdownKeydown(e) {
+            if (e.key === 'Escape') {
+                this._closeDropdown();
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                if (this._searchInput) this._searchInput.focus();
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const items = Array.from(this._itemsContainer.querySelectorAll('.snap-select-item:not(.snap-select-item-disabled)'));
+                const idx   = items.indexOf(document.activeElement);
+                const next  = e.key === 'ArrowDown'
+                    ? (idx < items.length - 1 ? idx + 1 : 0)
+                    : (idx > 0 ? idx - 1 : items.length - 1);
+                items[next]?.focus();
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (document.activeElement.classList.contains('snap-select-item')) {
+                    document.activeElement.click();
+                }
+            }
+        }
+
+        // ── Dropdown positioning ───────────────────────────────────────────────────
+        _positionDropdown() {
+            if (!this._itemsContainer) return;
+            const rect       = this._selectedContainer.getBoundingClientRect();
+            const scrollTop  = window.pageYOffset  || document.documentElement.scrollTop;
+            const scrollLeft = window.pageXOffset  || document.documentElement.scrollLeft;
+
+            let left = rect.left   + scrollLeft;
+            let top  = rect.bottom + scrollTop;
+
+            Object.assign(this._itemsContainer.style, {
+                position: 'absolute', left: `${left}px`, top: `${top}px`,
+                width: 'fit-content', minWidth: `${rect.width}px`,
+                boxSizing: 'border-box', zIndex: '10000',
+            });
+
+            const dh = this._itemsContainer.offsetHeight;
+            if (window.innerHeight - rect.bottom < dh && rect.top >= dh) {
+                this._itemsContainer.style.top = `${rect.top + scrollTop - dh}px`;
+            }
+
+            const dr = this._itemsContainer.getBoundingClientRect();
+            if (dr.right > window.innerWidth) {
+                this._itemsContainer.style.left = `${Math.max(10, window.innerWidth - dr.width - 10)}px`;
+            }
+        }
+
+        // ── Local search filter ────────────────────────────────────────────────────
+        _updateVisibility() {
+            if (!this._itemsContainer) return;
+            const term = this._searchInput?.value.toLowerCase() || '';
+
+            this._itemsContainer.querySelectorAll('.snap-select-optgroup').forEach(group => {
+                let hasVisible = false;
+                group.querySelectorAll('.snap-select-item').forEach(item => {
+                    const text     = item.querySelector('.snap-select-label')?.textContent.toLowerCase() || '';
+                    const keywords = item.dataset.key?.toLowerCase() || '';
+                    const show     = text.includes(term) || keywords.includes(term);
+                    item.style.display = show ? '' : 'none';
+                    if (show) hasVisible = true;
+                });
+                const groupLabel = group.querySelector('.snap-select-optgroup-label');
+                group.style.display = (groupLabel?.textContent.toLowerCase().includes(term) || hasVisible) ? '' : 'none';
+            });
+
+            this._itemsContainer.querySelectorAll('.snap-select-item').forEach(item => {
+                if (item.closest('.snap-select-optgroup')) return;
+                const text     = item.querySelector('.snap-select-label')?.textContent.toLowerCase() || '';
+                const keywords = item.dataset.key?.toLowerCase() || '';
+                item.style.display = (text.includes(term) || keywords.includes(term)) ? '' : 'none';
+            });
+        }
+
+        // ── Populate dropdown ──────────────────────────────────────────────────────
+        _populateItems() {
+            if (!this._itemsContainer) return;
+            this._itemsContainer.innerHTML = '';
+            this._checkboxMap.clear();
+
+            if (this.config.ajax || this.config.liveSearch) {
+                this._buildSearchBar();
+            }
+
+            if (this.config.ajax) {
+                this._fetchPage('', 1, false);
+                return;
+            }
+
+            if (this.isMultiple && this.config.selectAllOption) {
+                this._itemsContainer.appendChild(this._buildSelectAllItem());
+            }
+
+            Array.from(this.select.children).forEach(child => {
+                if (child.tagName === 'OPTGROUP') {
+                    this._itemsContainer.appendChild(this._buildOptgroup(child));
+                } else if (child.tagName === 'OPTION') {
+                    if (this.config.showClearButton && child.value === '' && child === this.select.options[0]) return;
+                    const item = this._createOptionItem(child);
+                    item.dataset.optgroup = '';
+                    this._itemsContainer.appendChild(item);
+                }
+            });
+        }
+
+        _buildSearchBar() {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('snap-select-search-wrapper');
+            this._itemsContainer.appendChild(wrapper);
+
+            this._searchInput = document.createElement('input');
+            this._searchInput.classList.add('snap-select-search');
+            this._searchInput.setAttribute('tabindex', '-1');
+            this._searchInput.setAttribute('placeholder', 'Search...');
+            wrapper.appendChild(this._searchInput);
+
+            this._clearSearchBtn = document.createElement('span');
+            this._clearSearchBtn.classList.add('snap-select-clear-search');
+            this._clearSearchBtn.textContent = '×';
+            this._clearSearchBtn.style.display = 'none';
+            this._clearSearchBtn.addEventListener('click', () => {
+                this._searchInput.value = '';
+                this._clearSearchBtn.style.display = 'none';
+                this.config.ajax ? this._triggerSearch('') : this._updateVisibility();
+            });
+            wrapper.appendChild(this._clearSearchBtn);
+
+            this._searchInput.addEventListener('input', () => {
+                this._clearSearchBtn.style.display = this._searchInput.value ? 'inline' : 'none';
+                if (this.config.ajax) {
+                    clearTimeout(this._debounceTimer);
+                    this._debounceTimer = setTimeout(
+                        () => this._triggerSearch(this._searchInput.value.trim()),
+                        this.config.ajax.delay || 300
+                    );
+                } else {
+                    this._updateVisibility();
+                }
+            });
+
+            this._searchInput.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+                if (e.key === 'Escape') {
+                    this._closeDropdown();
+                } else if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const first = this._itemsContainer.querySelector('.snap-select-item:not(.snap-select-item-disabled)');
+                    if (first) first.focus();
+                }
+            });
+        }
+
+        _buildSelectAllItem() {
+            const div      = document.createElement('div');
+            const checkbox = document.createElement('input');
+            const label    = document.createElement('label');
+
+            div.classList.add('snap-select-item', 'snap-select-all');
+            checkbox.type = 'checkbox';
+            checkbox.classList.add('snap-select-checkbox');
+            label.classList.add('snap-select-label');
+            label.textContent = 'Select All';
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
+
+            div.addEventListener('click', () => {
+                const selectable  = Array.from(this.select.options).filter(o => !(o === this.select.options[0] && o.value === ''));
+                const maxSelected = Math.min(this.config.maxSelections, selectable.length);
+                const allSelected = this._selectedValues.size === maxSelected;
+
+                if (allSelected) {
+                    this._selectedValues.clear();
+                    this._checkboxMap.forEach(cb => cb.checked = false);
+                    checkbox.checked = false;
+                } else {
+                    selectable.forEach(opt => {
+                        if (this._selectedValues.size < maxSelected) {
+                            this._selectedValues.add(opt.value);
+                            const cb = this._checkboxMap.get(opt.value);
+                            if (cb) cb.checked = true;
+                        }
+                    });
+                    checkbox.checked = true;
+                }
+                this._updateMultipleDisplay();
+            });
+
+            return div;
+        }
+
+        _buildOptgroup(optgroup) {
+            const group = document.createElement('div');
+            group.classList.add('snap-select-optgroup');
+
+            const label = document.createElement('div');
+            label.classList.add('snap-select-optgroup-label');
+            label.textContent      = optgroup.label;
+            label.style.fontWeight = 'bold';
+
+            if (this.isMultiple && this.config.selectOptgroups) {
+                label.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    let added = 0;
+                    Array.from(optgroup.children).forEach(opt => {
+                        if (this._selectedValues.size < this.config.maxSelections && !this._selectedValues.has(opt.value)) {
+                            this._selectedValues.add(opt.value);
+                            const cb = this._checkboxMap.get(opt.value);
+                            if (cb) cb.checked = true;
+                            added++;
+                        }
+                    });
+                    if (added > 0) this._updateMultipleDisplay();
+                });
+            }
+
+            group.appendChild(label);
+            Array.from(optgroup.children).forEach(opt => group.appendChild(this._createOptionItem(opt)));
+            return group;
+        }
+
+        _createOptionItem(option) {
+            const div = document.createElement('div');
+            div.classList.add('snap-select-item');
+            div.dataset.value = option.value;
+            div.dataset.key   = option.dataset.key || '';
+
+            if (option.disabled) div.classList.add('snap-select-item-disabled');
+
+            if (this.isMultiple) {
+                this._buildMultipleItem(div, option);
+            } else {
+                this._buildSingleItem(div, option);
+            }
+
+            return div;
+        }
+
+        _buildMultipleItem(div, option) {
+            const checkbox = document.createElement('input');
+            checkbox.type  = 'checkbox';
+            checkbox.classList.add('snap-select-checkbox');
+            checkbox.checked = this._selectedValues.has(option.value);
+            if (checkbox.checked) div.classList.add('snap-select-item-selected');
+            div.appendChild(checkbox);
+
+            this._checkboxMap.set(option.value, checkbox);
+
+            const label = document.createElement('label');
+            label.classList.add('snap-select-label');
+            label.textContent = option.textContent;
+            div.appendChild(label);
+            div.setAttribute('tabindex', '-1');
+
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const { config, _selectedValues: vals } = this;
+                if (vals.has(option.value)) {
+                    vals.delete(option.value);
+                    checkbox.checked = false;
+                    div.classList.remove('snap-select-item-selected');
+                    if (config.onItemDelete) config.onItemDelete.call(this.select, option.value, option.textContent);
+                } else if (vals.size < config.maxSelections) {
+                    vals.add(option.value);
+                    checkbox.checked = true;
+                    div.classList.add('snap-select-item-selected');
+                    if (config.onItemAdd) config.onItemAdd.call(this.select, option.value, option.textContent);
+                }
+                this._updateMultipleDisplay();
+                if (config.maxSelections === 1 && vals.size === 1) this._closeDropdown();
+            });
+        }
+
+        _buildSingleItem(div, option) {
+            div.textContent = option.textContent;
+            div.setAttribute('tabindex', '-1');
+            if (option.value === this.select.value) div.classList.add('snap-select-item-selected');
+
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const { select, config } = this;
+                const prevValue  = select.value;
+                this._itemsContainer?.querySelectorAll('.snap-select-item').forEach(el => el.classList.remove('snap-select-item-selected'));
+                div.classList.add('snap-select-item-selected');
+                select.value = option.value;
+                this._updateSingleSelect(option.textContent);
+                this._selectedContainer.classList.remove('snap-select-invalid');
+                const msg = this._customSelect.nextElementSibling;
+                if (msg?.classList.contains('snap-select-validation-message')) msg.remove();
+                if (config.onItemAdd) config.onItemAdd.call(select, option.value, option.textContent);
+                if (config.onItemDelete && prevValue && prevValue !== option.value) {
+                    const prevOption = select.querySelector(`option[value="${prevValue}"]`);
+                    config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
+                }
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                select.dispatchEvent(new Event('input',  { bubbles: true }));
+                if (config.closeOnSelect) this._closeDropdown();
+            });
+        }
+
+        // ── AJAX helpers ───────────────────────────────────────────────────────────
+        _cacheKey(search, page) { return `${search}__p${page}`; }
+
+        _buildFetchParams(search, page) {
+            const cfg    = this.config.ajax;
+            const url    = typeof cfg.url  === 'function' ? cfg.url.call(this.select, search, page)  : cfg.url;
+            const extra  = typeof cfg.data === 'function' ? cfg.data.call(this.select, search, page) || {}
+                : (cfg.data && typeof cfg.data === 'object' ? cfg.data : {});
+            const params = Object.assign({ q: search, page, pagesize: cfg.pagesize }, extra);
+            const method = (cfg.method || 'GET').toUpperCase();
+            const headers= Object.assign({}, cfg.headers || {});
+            let fetchUrl = url;
+            let fetchInit= { method, headers };
+
+            if (method === 'GET') {
+                const qs = new URLSearchParams(params).toString();
+                fetchUrl = qs ? `${url}${url.includes('?') ? '&' : '?'}${qs}` : url;
+            } else {
+                const fd = new FormData();
+                Object.entries(params).forEach(([k, v]) => fd.append(k, v));
+                fetchInit.body = fd;
+            }
+            return { fetchUrl, fetchInit };
+        }
+
+        _showLoading(append) {
+            if (!this._itemsContainer) return;
+            if (!append) {
+                this._itemsContainer.querySelectorAll(
+                    '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor'
+                ).forEach(el => el.remove());
+            }
+            if (!this._loadingIndicator) {
+                this._loadingIndicator = document.createElement('div');
+                this._loadingIndicator.classList.add('snap-select-loading');
+                this._loadingIndicator.textContent = this.config.ajax.loadingText;
+            }
+            this._itemsContainer.appendChild(this._loadingIndicator);
+        }
+
+        _hideLoading() {
+            if (this._loadingIndicator?.parentNode) this._loadingIndicator.remove();
+        }
+
+        _showMessage(text, cssClass) {
+            if (!this._itemsContainer) return;
+            this._hideLoading();
+            const msg = document.createElement('div');
+            msg.classList.add('snap-select-no-results', cssClass);
+            msg.textContent = text;
+            this._itemsContainer.appendChild(msg);
+        }
+
+        _appendResults(results) {
+            if (!this._itemsContainer) return;
+            this._hideLoading();
+            this._cancelInfiniteObserver();
+
+            results.forEach(item => {
+                if (!this.select.querySelector(`option[value="${item.id}"]`)) {
+                    const opt = document.createElement('option');
+                    opt.value       = item.id;
+                    opt.textContent = item.text;
+                    Object.entries(item).forEach(([k, v]) => { if (k !== 'id' && k !== 'text') opt.dataset[k] = v; });
+                    this.select.appendChild(opt);
+                }
+                this._itemsContainer.appendChild(
+                    this._createOptionItem(this.select.querySelector(`option[value="${item.id}"]`))
+                );
+            });
+
+            if (this._hasMorePages) this._attachInfiniteSentinel();
+        }
+
+        _attachInfiniteSentinel() {
+            if (!this._itemsContainer) return;
+            this._infiniteAnchor = document.createElement('div');
+            this._infiniteAnchor.classList.add('snap-select-infinite-anchor');
+            this._itemsContainer.appendChild(this._infiniteAnchor);
+
+            this._infiniteObserver = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && this._hasMorePages && !this._isLoadingAjax) {
+                    this._fetchPage(this._currentSearch, this._currentPage + 1, true);
+                }
+            }, { root: this._itemsContainer, threshold: 0.1 });
+
+            this._infiniteObserver.observe(this._infiniteAnchor);
+        }
+
+        _cancelInfiniteObserver() {
+            if (this._infiniteObserver) { this._infiniteObserver.disconnect(); this._infiniteObserver = null; }
+            if (this._infiniteAnchor?.parentNode) { this._infiniteAnchor.remove(); this._infiniteAnchor = null; }
+        }
+
+        _fetchPage(search, page, append) {
+            if (this._isLoadingAjax) return;
+            const cfg = this.config.ajax;
+            const key = this._cacheKey(search, page);
+
+            if (cfg.cache && this._ajaxCache.has(key)) {
+                const cached = this._ajaxCache.get(key);
+                this._currentPage  = page;
+                this._hasMorePages = cached.hasMore;
+                if (!append) {
+                    this._itemsContainer?.querySelectorAll(
+                        '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor'
+                    ).forEach(el => el.remove());
+                }
+                if (cached.results.length === 0 && !append) {
+                    this._showMessage(cfg.noResultsText, 'snap-select-no-results');
+                } else {
+                    this._appendResults(cached.results);
+                }
+                return;
+            }
+
+            this._isLoadingAjax = true;
+            this._showLoading(append);
+            if (this._activeRequest) this._activeRequest.abort();
+            this._activeRequest = new AbortController();
+
+            const { fetchUrl, fetchInit } = this._buildFetchParams(search, page);
+            fetchInit.signal = this._activeRequest.signal;
+
+            fetch(fetchUrl, fetchInit)
+                .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+                .then(data => {
+                    this._isLoadingAjax = false;
+                    this._activeRequest = null;
+
+                    let processed = { results: [], hasMore: false };
+                    if (typeof cfg.processResults === 'function') {
+                        processed = cfg.processResults.call(this.select, data, search, page) || processed;
+                    } else {
+                        processed.results = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
+                        processed.hasMore = !!data.hasMore;
+                    }
+
+                    this._currentPage  = page;
+                    this._hasMorePages = !!processed.hasMore;
+                    if (cfg.cache) this._ajaxCache.set(key, { results: processed.results, hasMore: this._hasMorePages });
+
+                    if (!this._itemsContainer) return;
+                    if (!append) {
+                        this._itemsContainer.querySelectorAll(
+                            '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor'
+                        ).forEach(el => el.remove());
+                    }
+                    if (processed.results.length === 0 && !append) {
+                        this._showMessage(cfg.noResultsText, 'snap-select-no-results');
+                    } else {
+                        this._appendResults(processed.results);
+                    }
+                })
+                .catch(err => {
+                    if (err.name === 'AbortError') return;
+                    this._isLoadingAjax = false;
+                    this._activeRequest = null;
+                    console.error('[SnapSelect] AJAX error:', err);
+                    if (this._itemsContainer) { this._hideLoading(); this._showMessage(cfg.errorText, 'snap-select-error'); }
+                });
+        }
+
+        _triggerSearch(search) {
+            if (!this.config.ajax || !this._itemsContainer) return;
+            const minLen = this.config.ajax.minimumInputLength || 0;
+            if (search.length < minLen) {
+                this._itemsContainer.querySelectorAll(
+                    '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor, .snap-select-loading'
+                ).forEach(el => el.remove());
+                return;
+            }
+            this._currentSearch = search;
+            this._currentPage   = 1;
+            this._hasMorePages  = false;
+            this._cancelInfiniteObserver();
+            this._fetchPage(search, 1, false);
+        }
+
+        // ── Public API ─────────────────────────────────────────────────────────────
+        clear() {
             if (this._isDisabled()) return;
-            vals.clear();
-            this._checkboxMap.forEach(cb => cb.checked = false);
-            this._updateMultipleDisplay();
-          });
-          this._tagContainer.appendChild(clearAll);
-        }
-      }
-    }
-
-    _updateSingleSelect(text, noAllowEmpty = false) {
-      const { select, config } = this;
-      this._tagContainer.innerHTML = '';
-
-      const selectedText = document.createElement('div');
-      selectedText.classList.add('snap-select-single-selected-text');
-      selectedText.textContent = text;
-
-      if (config.showClearButton && !noAllowEmpty) {
-        const removeBtn = document.createElement('span');
-        removeBtn.classList.add('snap-select-clear-all');
-        removeBtn.textContent = '×';
-        removeBtn.style.float = 'right';
-        removeBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (this._isDisabled()) return;
-          const prevValue  = select.value;
-          const prevOption = select.querySelector(`option[value="${prevValue}"]`);
-          select.value = '';
-          this._updateSingleSelect(config.placeholder || config.defaultText, true);
-          if (config.onItemDelete && prevValue) {
-            config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
-          }
-          select.dispatchEvent(new Event('change', { bubbles: true }));
-          select.dispatchEvent(new Event('input',  { bubbles: true }));
-        });
-        selectedText.appendChild(removeBtn);
-        selectedText.style.display = 'inline-block';
-        selectedText.style.width   = '100%';
-      }
-
-      this._tagContainer.appendChild(selectedText);
-    }
-
-    // ── Dropdown open/close ────────────────────────────────────────────────────
-    _toggleDropdown(e) {
-      if (e) e.stopPropagation();
-      if (this._isDisabled()) return;
-      this._itemsContainer ? this._closeDropdown() : this._openDropdown();
-    }
-
-    _openDropdown() {
-      const { select, config } = this;
-
-      document.querySelectorAll('.snap-select-items').forEach(dd => dd.remove());
-      document.querySelectorAll('.snap-select-overlay').forEach(ov => ov.remove());
-
-      if (!select.children.length && !config.ajax) return;
-
-      if (config.ajax) {
-        this._currentPage   = 1;
-        this._currentSearch = '';
-        this._hasMorePages  = false;
-      }
-
-      this._dropdownOverlay = document.createElement('div');
-      this._dropdownOverlay.classList.add('snap-select-overlay');
-      document.body.appendChild(this._dropdownOverlay);
-
-      this._itemsContainer = document.createElement('div');
-      this._itemsContainer.classList.add('snap-select-items');
-      this._itemsContainer.setAttribute('role', 'listbox');
-      if (this.isMultiple) this._itemsContainer.setAttribute('aria-multiselectable', 'true');
-      this._itemsContainer.setAttribute('tabindex', '-1');
-      this._itemsContainer.style.display = 'block';
-      document.body.appendChild(this._itemsContainer);
-
-      this._populateItems();
-      this._positionDropdown();
-      this._itemsContainer.focus();
-      this._customSelect.setAttribute('aria-expanded', 'true');
-
-      this._itemsContainer.addEventListener('keydown', (e) => this._onDropdownKeydown(e));
-      this._dropdownOverlay.addEventListener('click',   () => this._closeDropdown());
-
-      const reposition    = () => this._positionDropdown();
-      const scrollHandler = (e) => { if (!this._itemsContainer?.contains(e.target)) this._positionDropdown(); };
-      const resizeObserver = new ResizeObserver(reposition);
-      window.addEventListener('scroll', scrollHandler, true);
-      window.addEventListener('resize', reposition);
-      resizeObserver.observe(this._selectedContainer);
-
-      this._customSelect._cleanupHandlers = () => {
-        window.removeEventListener('scroll', scrollHandler, true);
-        window.removeEventListener('resize', reposition);
-        resizeObserver.disconnect();
-      };
-    }
-
-    _closeDropdown() {
-      this._selectedContainer.focus();
-      this._cancelInfiniteObserver();
-      if (this._activeRequest)  { this._activeRequest.abort(); this._activeRequest = null; }
-      if (this._debounceTimer)  { clearTimeout(this._debounceTimer); this._debounceTimer = null; }
-      if (this._itemsContainer) { this._itemsContainer.remove(); this._itemsContainer = null; }
-      if (this._dropdownOverlay){ this._dropdownOverlay.remove(); this._dropdownOverlay = null; }
-      if (this._customSelect._cleanupHandlers) {
-        this._customSelect._cleanupHandlers();
-        this._customSelect._cleanupHandlers = null;
-      }
-      this._customSelect.setAttribute('aria-expanded', 'false');
-    }
-
-    _onDropdownKeydown(e) {
-      if (e.key === 'Escape') {
-        this._closeDropdown();
-      } else if (e.key === 'Tab') {
-        e.preventDefault();
-        if (this._searchInput) this._searchInput.focus();
-      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        const items = Array.from(this._itemsContainer.querySelectorAll('.snap-select-item:not(.snap-select-item-disabled)'));
-        const idx   = items.indexOf(document.activeElement);
-        const next  = e.key === 'ArrowDown'
-          ? (idx < items.length - 1 ? idx + 1 : 0)
-          : (idx > 0 ? idx - 1 : items.length - 1);
-        items[next]?.focus();
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        if (document.activeElement.classList.contains('snap-select-item')) {
-          document.activeElement.click();
-        }
-      }
-    }
-
-    // ── Dropdown positioning ───────────────────────────────────────────────────
-    _positionDropdown() {
-      if (!this._itemsContainer) return;
-      const rect       = this._selectedContainer.getBoundingClientRect();
-      const scrollTop  = window.pageYOffset  || document.documentElement.scrollTop;
-      const scrollLeft = window.pageXOffset  || document.documentElement.scrollLeft;
-
-      let left = rect.left   + scrollLeft;
-      let top  = rect.bottom + scrollTop;
-
-      Object.assign(this._itemsContainer.style, {
-        position: 'absolute', left: `${left}px`, top: `${top}px`,
-        width: 'fit-content', minWidth: `${rect.width}px`,
-        boxSizing: 'border-box', zIndex: '10000',
-      });
-
-      const dh = this._itemsContainer.offsetHeight;
-      if (window.innerHeight - rect.bottom < dh && rect.top >= dh) {
-        this._itemsContainer.style.top = `${rect.top + scrollTop - dh}px`;
-      }
-
-      const dr = this._itemsContainer.getBoundingClientRect();
-      if (dr.right > window.innerWidth) {
-        this._itemsContainer.style.left = `${Math.max(10, window.innerWidth - dr.width - 10)}px`;
-      }
-    }
-
-    // ── Local search filter ────────────────────────────────────────────────────
-    _updateVisibility() {
-      if (!this._itemsContainer) return;
-      const term = this._searchInput?.value.toLowerCase() || '';
-
-      this._itemsContainer.querySelectorAll('.snap-select-optgroup').forEach(group => {
-        let hasVisible = false;
-        group.querySelectorAll('.snap-select-item').forEach(item => {
-          const text     = item.querySelector('.snap-select-label')?.textContent.toLowerCase() || '';
-          const keywords = item.dataset.key?.toLowerCase() || '';
-          const show     = text.includes(term) || keywords.includes(term);
-          item.style.display = show ? '' : 'none';
-          if (show) hasVisible = true;
-        });
-        const groupLabel = group.querySelector('.snap-select-optgroup-label');
-        group.style.display = (groupLabel?.textContent.toLowerCase().includes(term) || hasVisible) ? '' : 'none';
-      });
-
-      this._itemsContainer.querySelectorAll('.snap-select-item').forEach(item => {
-        if (item.closest('.snap-select-optgroup')) return;
-        const text     = item.querySelector('.snap-select-label')?.textContent.toLowerCase() || '';
-        const keywords = item.dataset.key?.toLowerCase() || '';
-        item.style.display = (text.includes(term) || keywords.includes(term)) ? '' : 'none';
-      });
-    }
-
-    // ── Populate dropdown ──────────────────────────────────────────────────────
-    _populateItems() {
-      if (!this._itemsContainer) return;
-      this._itemsContainer.innerHTML = '';
-      this._checkboxMap.clear();
-
-      if (this.config.ajax || this.config.liveSearch) {
-        this._buildSearchBar();
-      }
-
-      if (this.config.ajax) {
-        this._fetchPage('', 1, false);
-        return;
-      }
-
-      if (this.isMultiple && this.config.selectAllOption) {
-        this._itemsContainer.appendChild(this._buildSelectAllItem());
-      }
-
-      Array.from(this.select.children).forEach(child => {
-        if (child.tagName === 'OPTGROUP') {
-          this._itemsContainer.appendChild(this._buildOptgroup(child));
-        } else if (child.tagName === 'OPTION') {
-          if (this.config.showClearButton && child.value === '' && child === this.select.options[0]) return;
-          const item = this._createOptionItem(child);
-          item.dataset.optgroup = '';
-          this._itemsContainer.appendChild(item);
-        }
-      });
-    }
-
-    _buildSearchBar() {
-      const wrapper = document.createElement('div');
-      wrapper.classList.add('snap-select-search-wrapper');
-      this._itemsContainer.appendChild(wrapper);
-
-      this._searchInput = document.createElement('input');
-      this._searchInput.classList.add('snap-select-search');
-      this._searchInput.setAttribute('tabindex', '-1');
-      this._searchInput.setAttribute('placeholder', 'Search...');
-      wrapper.appendChild(this._searchInput);
-
-      this._clearSearchBtn = document.createElement('span');
-      this._clearSearchBtn.classList.add('snap-select-clear-search');
-      this._clearSearchBtn.textContent = '×';
-      this._clearSearchBtn.style.display = 'none';
-      this._clearSearchBtn.addEventListener('click', () => {
-        this._searchInput.value = '';
-        this._clearSearchBtn.style.display = 'none';
-        this.config.ajax ? this._triggerSearch('') : this._updateVisibility();
-      });
-      wrapper.appendChild(this._clearSearchBtn);
-
-      this._searchInput.addEventListener('input', () => {
-        this._clearSearchBtn.style.display = this._searchInput.value ? 'inline' : 'none';
-        if (this.config.ajax) {
-          clearTimeout(this._debounceTimer);
-          this._debounceTimer = setTimeout(
-            () => this._triggerSearch(this._searchInput.value.trim()),
-            this.config.ajax.delay || 300
-          );
-        } else {
-          this._updateVisibility();
-        }
-      });
-
-      this._searchInput.addEventListener('keydown', (e) => {
-        e.stopPropagation();
-        if (e.key === 'Escape') {
-          this._closeDropdown();
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          const first = this._itemsContainer.querySelector('.snap-select-item:not(.snap-select-item-disabled)');
-          if (first) first.focus();
-        }
-      });
-    }
-
-    _buildSelectAllItem() {
-      const div      = document.createElement('div');
-      const checkbox = document.createElement('input');
-      const label    = document.createElement('label');
-
-      div.classList.add('snap-select-item', 'snap-select-all');
-      checkbox.type = 'checkbox';
-      checkbox.classList.add('snap-select-checkbox');
-      label.classList.add('snap-select-label');
-      label.textContent = 'Select All';
-
-      div.appendChild(checkbox);
-      div.appendChild(label);
-
-      div.addEventListener('click', () => {
-        const selectable  = Array.from(this.select.options).filter(o => !(o === this.select.options[0] && o.value === ''));
-        const maxSelected = Math.min(this.config.maxSelections, selectable.length);
-        const allSelected = this._selectedValues.size === maxSelected;
-
-        if (allSelected) {
-          this._selectedValues.clear();
-          this._checkboxMap.forEach(cb => cb.checked = false);
-          checkbox.checked = false;
-        } else {
-          selectable.forEach(opt => {
-            if (this._selectedValues.size < maxSelected) {
-              this._selectedValues.add(opt.value);
-              const cb = this._checkboxMap.get(opt.value);
-              if (cb) cb.checked = true;
+            if (this.isMultiple) {
+                this._selectedValues.clear();
+                this._checkboxMap.forEach(cb => cb.checked = false);
+                this._updateMultipleDisplay();
+            } else {
+                this.select.value = '';
+                this._updateSingleSelect(this.config.placeholder || this.config.defaultText, true);
+                this.select.dispatchEvent(new Event('change', { bubbles: true }));
+                this.select.dispatchEvent(new Event('input',  { bubbles: true }));
             }
-          });
-          checkbox.checked = true;
         }
-        this._updateMultipleDisplay();
-      });
 
-      return div;
-    }
-
-    _buildOptgroup(optgroup) {
-      const group = document.createElement('div');
-      group.classList.add('snap-select-optgroup');
-
-      const label = document.createElement('div');
-      label.classList.add('snap-select-optgroup-label');
-      label.textContent      = optgroup.label;
-      label.style.fontWeight = 'bold';
-
-      if (this.isMultiple && this.config.selectOptgroups) {
-        label.addEventListener('click', (e) => {
-          e.stopPropagation();
-          let added = 0;
-          Array.from(optgroup.children).forEach(opt => {
-            if (this._selectedValues.size < this.config.maxSelections && !this._selectedValues.has(opt.value)) {
-              this._selectedValues.add(opt.value);
-              const cb = this._checkboxMap.get(opt.value);
-              if (cb) cb.checked = true;
-              added++;
-            }
-          });
-          if (added > 0) this._updateMultipleDisplay();
-        });
-      }
-
-      group.appendChild(label);
-      Array.from(optgroup.children).forEach(opt => group.appendChild(this._createOptionItem(opt)));
-      return group;
-    }
-
-    _createOptionItem(option) {
-      const div = document.createElement('div');
-      div.classList.add('snap-select-item');
-      div.dataset.value = option.value;
-      div.dataset.key   = option.dataset.key || '';
-
-      if (option.disabled) div.classList.add('snap-select-item-disabled');
-
-      if (this.isMultiple) {
-        this._buildMultipleItem(div, option);
-      } else {
-        this._buildSingleItem(div, option);
-      }
-
-      return div;
-    }
-
-    _buildMultipleItem(div, option) {
-      const checkbox = document.createElement('input');
-      checkbox.type  = 'checkbox';
-      checkbox.classList.add('snap-select-checkbox');
-      checkbox.checked = this._selectedValues.has(option.value);
-      if (checkbox.checked) div.classList.add('snap-select-item-selected');
-      div.appendChild(checkbox);
-
-      this._checkboxMap.set(option.value, checkbox);
-
-      const label = document.createElement('label');
-      label.classList.add('snap-select-label');
-      label.textContent = option.textContent;
-      div.appendChild(label);
-      div.setAttribute('tabindex', '-1');
-
-      div.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const { config, _selectedValues: vals } = this;
-        if (vals.has(option.value)) {
-          vals.delete(option.value);
-          checkbox.checked = false;
-          div.classList.remove('snap-select-item-selected');
-          if (config.onItemDelete) config.onItemDelete.call(this.select, option.value, option.textContent);
-        } else if (vals.size < config.maxSelections) {
-          vals.add(option.value);
-          checkbox.checked = true;
-          div.classList.add('snap-select-item-selected');
-          if (config.onItemAdd) config.onItemAdd.call(this.select, option.value, option.textContent);
+        refresh() {
+            if (!this.config.ajax) return;
+            this._ajaxCache.delete(this._cacheKey(this._currentSearch, this._currentPage));
+            if (this._itemsContainer) this._triggerSearch(this._currentSearch);
         }
-        this._updateMultipleDisplay();
-        if (config.maxSelections === 1 && vals.size === 1) this._closeDropdown();
-      });
-    }
 
-    _buildSingleItem(div, option) {
-      div.textContent = option.textContent;
-      div.setAttribute('tabindex', '-1');
-      if (option.value === this.select.value) div.classList.add('snap-select-item-selected');
-
-      div.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const { select, config } = this;
-        const prevValue  = select.value;
-        this._itemsContainer?.querySelectorAll('.snap-select-item').forEach(el => el.classList.remove('snap-select-item-selected'));
-        div.classList.add('snap-select-item-selected');
-        select.value = option.value;
-        this._updateSingleSelect(option.textContent);
-        this._selectedContainer.classList.remove('snap-select-invalid');
-        const msg = this._customSelect.nextElementSibling;
-        if (msg?.classList.contains('snap-select-validation-message')) msg.remove();
-        if (config.onItemAdd) config.onItemAdd.call(select, option.value, option.textContent);
-        if (config.onItemDelete && prevValue && prevValue !== option.value) {
-          const prevOption = select.querySelector(`option[value="${prevValue}"]`);
-          config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
+        clearCache() {
+            this._ajaxCache.clear();
         }
-        select.dispatchEvent(new Event('change', { bubbles: true }));
-        select.dispatchEvent(new Event('input',  { bubbles: true }));
-        if (config.closeOnSelect) this._closeDropdown();
-      });
     }
 
-    // ── AJAX helpers ───────────────────────────────────────────────────────────
-    _cacheKey(search, page) { return `${search}__p${page}`; }
+    // ── Selector-string wrapper ────────────────────────────────────────────────
+    window.SnapSelect = function (selector, options) {
+        const instances = Array.from(document.querySelectorAll(selector))
+            .map(el => new SnapSelect(el, options));
+        return instances.length === 1 ? instances[0] : instances;
+    };
 
-    _buildFetchParams(search, page) {
-      const cfg    = this.config.ajax;
-      const url    = typeof cfg.url  === 'function' ? cfg.url.call(this.select, search, page)  : cfg.url;
-      const extra  = typeof cfg.data === 'function' ? cfg.data.call(this.select, search, page) || {}
-                   : (cfg.data && typeof cfg.data === 'object' ? cfg.data : {});
-      const params = Object.assign({ q: search, page, pagesize: cfg.pagesize }, extra);
-      const method = (cfg.method || 'GET').toUpperCase();
-      const headers= Object.assign({}, cfg.headers || {});
-      let fetchUrl = url;
-      let fetchInit= { method, headers };
+    window.SnapSelectClass = SnapSelect;
 
-      if (method === 'GET') {
-        const qs = new URLSearchParams(params).toString();
-        fetchUrl = qs ? `${url}${url.includes('?') ? '&' : '?'}${qs}` : url;
-      } else {
-        const fd = new FormData();
-        Object.entries(params).forEach(([k, v]) => fd.append(k, v));
-        fetchInit.body = fd;
-      }
-      return { fetchUrl, fetchInit };
+    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+        module.exports = SnapSelect;
     }
-
-    _showLoading(append) {
-      if (!this._itemsContainer) return;
-      if (!append) {
-        this._itemsContainer.querySelectorAll(
-          '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor'
-        ).forEach(el => el.remove());
-      }
-      if (!this._loadingIndicator) {
-        this._loadingIndicator = document.createElement('div');
-        this._loadingIndicator.classList.add('snap-select-loading');
-        this._loadingIndicator.textContent = this.config.ajax.loadingText;
-      }
-      this._itemsContainer.appendChild(this._loadingIndicator);
-    }
-
-    _hideLoading() {
-      if (this._loadingIndicator?.parentNode) this._loadingIndicator.remove();
-    }
-
-    _showMessage(text, cssClass) {
-      if (!this._itemsContainer) return;
-      this._hideLoading();
-      const msg = document.createElement('div');
-      msg.classList.add('snap-select-no-results', cssClass);
-      msg.textContent = text;
-      this._itemsContainer.appendChild(msg);
-    }
-
-    _appendResults(results) {
-      if (!this._itemsContainer) return;
-      this._hideLoading();
-      this._cancelInfiniteObserver();
-
-      results.forEach(item => {
-        if (!this.select.querySelector(`option[value="${item.id}"]`)) {
-          const opt = document.createElement('option');
-          opt.value       = item.id;
-          opt.textContent = item.text;
-          Object.entries(item).forEach(([k, v]) => { if (k !== 'id' && k !== 'text') opt.dataset[k] = v; });
-          this.select.appendChild(opt);
-        }
-        this._itemsContainer.appendChild(
-          this._createOptionItem(this.select.querySelector(`option[value="${item.id}"]`))
-        );
-      });
-
-      if (this._hasMorePages) this._attachInfiniteSentinel();
-    }
-
-    _attachInfiniteSentinel() {
-      if (!this._itemsContainer) return;
-      this._infiniteAnchor = document.createElement('div');
-      this._infiniteAnchor.classList.add('snap-select-infinite-anchor');
-      this._itemsContainer.appendChild(this._infiniteAnchor);
-
-      this._infiniteObserver = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && this._hasMorePages && !this._isLoadingAjax) {
-          this._fetchPage(this._currentSearch, this._currentPage + 1, true);
-        }
-      }, { root: this._itemsContainer, threshold: 0.1 });
-
-      this._infiniteObserver.observe(this._infiniteAnchor);
-    }
-
-    _cancelInfiniteObserver() {
-      if (this._infiniteObserver) { this._infiniteObserver.disconnect(); this._infiniteObserver = null; }
-      if (this._infiniteAnchor?.parentNode) { this._infiniteAnchor.remove(); this._infiniteAnchor = null; }
-    }
-
-    _fetchPage(search, page, append) {
-      if (this._isLoadingAjax) return;
-      const cfg = this.config.ajax;
-      const key = this._cacheKey(search, page);
-
-      if (cfg.cache && this._ajaxCache.has(key)) {
-        const cached = this._ajaxCache.get(key);
-        this._currentPage  = page;
-        this._hasMorePages = cached.hasMore;
-        if (!append) {
-          this._itemsContainer?.querySelectorAll(
-            '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor'
-          ).forEach(el => el.remove());
-        }
-        if (cached.results.length === 0 && !append) {
-          this._showMessage(cfg.noResultsText, 'snap-select-no-results');
-        } else {
-          this._appendResults(cached.results);
-        }
-        return;
-      }
-
-      this._isLoadingAjax = true;
-      this._showLoading(append);
-      if (this._activeRequest) this._activeRequest.abort();
-      this._activeRequest = new AbortController();
-
-      const { fetchUrl, fetchInit } = this._buildFetchParams(search, page);
-      fetchInit.signal = this._activeRequest.signal;
-
-      fetch(fetchUrl, fetchInit)
-        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-        .then(data => {
-          this._isLoadingAjax = false;
-          this._activeRequest = null;
-
-          let processed = { results: [], hasMore: false };
-          if (typeof cfg.processResults === 'function') {
-            processed = cfg.processResults.call(this.select, data, search, page) || processed;
-          } else {
-            processed.results = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
-            processed.hasMore = !!data.hasMore;
-          }
-
-          this._currentPage  = page;
-          this._hasMorePages = !!processed.hasMore;
-          if (cfg.cache) this._ajaxCache.set(key, { results: processed.results, hasMore: this._hasMorePages });
-
-          if (!this._itemsContainer) return;
-          if (!append) {
-            this._itemsContainer.querySelectorAll(
-              '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor'
-            ).forEach(el => el.remove());
-          }
-          if (processed.results.length === 0 && !append) {
-            this._showMessage(cfg.noResultsText, 'snap-select-no-results');
-          } else {
-            this._appendResults(processed.results);
-          }
-        })
-        .catch(err => {
-          if (err.name === 'AbortError') return;
-          this._isLoadingAjax = false;
-          this._activeRequest = null;
-          console.error('[SnapSelect] AJAX error:', err);
-          if (this._itemsContainer) { this._hideLoading(); this._showMessage(cfg.errorText, 'snap-select-error'); }
-        });
-    }
-
-    _triggerSearch(search) {
-      if (!this.config.ajax || !this._itemsContainer) return;
-      const minLen = this.config.ajax.minimumInputLength || 0;
-      if (search.length < minLen) {
-        this._itemsContainer.querySelectorAll(
-          '.snap-select-item, .snap-select-optgroup, .snap-select-no-results, .snap-select-error, .snap-select-infinite-anchor, .snap-select-loading'
-        ).forEach(el => el.remove());
-        return;
-      }
-      this._currentSearch = search;
-      this._currentPage   = 1;
-      this._hasMorePages  = false;
-      this._cancelInfiniteObserver();
-      this._fetchPage(search, 1, false);
-    }
-
-    // ── Public API ─────────────────────────────────────────────────────────────
-    clear() {
-      if (this._isDisabled()) return;
-      if (this.isMultiple) {
-        this._selectedValues.clear();
-        this._checkboxMap.forEach(cb => cb.checked = false);
-        this._updateMultipleDisplay();
-      } else {
-        this.select.value = '';
-        this._updateSingleSelect(this.config.placeholder || this.config.defaultText, true);
-        this.select.dispatchEvent(new Event('change', { bubbles: true }));
-        this.select.dispatchEvent(new Event('input',  { bubbles: true }));
-      }
-    }
-
-    refresh() {
-      if (!this.config.ajax) return;
-      this._ajaxCache.delete(this._cacheKey(this._currentSearch, this._currentPage));
-      if (this._itemsContainer) this._triggerSearch(this._currentSearch);
-    }
-
-    clearCache() {
-      this._ajaxCache.clear();
-    }
-  }
-
-  // ── Selector-string wrapper ────────────────────────────────────────────────
-  window.SnapSelect = function (selector, options) {
-    const instances = Array.from(document.querySelectorAll(selector))
-      .map(el => new SnapSelect(el, options));
-    return instances.length === 1 ? instances[0] : instances;
-  };
-
-  window.SnapSelectClass = SnapSelect;
-
-  if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-    module.exports = SnapSelect;
-  }
 })();
