@@ -481,18 +481,11 @@
       this._itemsContainer.addEventListener('keydown', (e) => this._onDropdownKeydown(e));
       this._dropdownOverlay.addEventListener('click',   () => this._closeDropdown());
 
-      const reposition    = () => this._positionDropdown();
-      const scrollHandler = (e) => { if (!this._itemsContainer?.contains(e.target)) this._positionDropdown(); };
-      const resizeObserver = new ResizeObserver(reposition);
-      window.addEventListener('scroll', scrollHandler, true);
-      window.addEventListener('resize', reposition);
-      resizeObserver.observe(this._selectedContainer);
-
-      this._customSelect._cleanupHandlers = () => {
-        window.removeEventListener('scroll', scrollHandler, true);
-        window.removeEventListener('resize', reposition);
-        resizeObserver.disconnect();
-      };
+      this._reposition = () => this._positionDropdown();
+      this._resizeObserver = new ResizeObserver(this._reposition);
+      window.addEventListener('scroll', this._reposition, true);
+      window.addEventListener('resize', this._reposition);
+      this._resizeObserver.observe(this._selectedContainer);
     }
 
     _closeDropdown() {
@@ -502,10 +495,11 @@
       if (this._debounceTimer)  { clearTimeout(this._debounceTimer); this._debounceTimer = null; }
       if (this._itemsContainer) { this._itemsContainer.remove(); this._itemsContainer = null; }
       if (this._dropdownOverlay){ this._dropdownOverlay.remove(); this._dropdownOverlay = null; }
-      if (this._customSelect._cleanupHandlers) {
-        this._customSelect._cleanupHandlers();
-        this._customSelect._cleanupHandlers = null;
-      }
+      window.removeEventListener('scroll', this._reposition, true);
+      window.removeEventListener('resize', this._reposition);
+      this._resizeObserver.disconnect();
+      this._reposition = null;
+      this._resizeObserver = null;
       this._customSelect.setAttribute('aria-expanded', 'false');
     }
 
