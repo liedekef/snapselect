@@ -226,6 +226,9 @@
             this._customSelect.setAttribute('aria-haspopup', 'listbox');
             this._customSelect.style.width    = select.style.width;
             this._customSelect.style.minWidth = select.style.minWidth;
+            if (select.id) {
+                this._customSelect.id = 'div-snap-select-' + select.id;
+            }
 
             select.parentNode.insertBefore(this._customSelect, select);
             this._customSelect.appendChild(select);
