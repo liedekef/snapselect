@@ -226,8 +226,16 @@
             this._customSelect.setAttribute('aria-haspopup', 'listbox');
             this._customSelect.style.width    = select.style.width;
             this._customSelect.style.minWidth = select.style.minWidth;
+            const listboxId = 'snap-select-listbox-' + (select.id || Math.random().toString(36).slice(2));
+            this._customSelect.setAttribute('aria-controls', listboxId);
+            this._listboxId = listboxId;
             if (select.id) {
                 this._customSelect.id = 'div-snap-select-' + select.id;
+                const labelEl = document.querySelector(`label[for="${select.id}"]`);
+                if (labelEl) {
+                    if (!labelEl.id) labelEl.id = 'snap-select-label-' + select.id;
+                    this._customSelect.setAttribute('aria-labelledby', labelEl.id);
+                }
             }
 
             select.parentNode.insertBefore(this._customSelect, select);
@@ -342,10 +350,12 @@
         _syncDisabled() {
             if (this._isDisabled()) {
                 this._customSelect.classList.add('snap-select-disabled');
+                this._customSelect.setAttribute('aria-disabled', 'true');
                 this._selectedContainer.setAttribute('tabindex', '-1');
                 if (this._itemsContainer) this._closeDropdown();
             } else {
                 this._customSelect.classList.remove('snap-select-disabled');
+                this._customSelect.removeAttribute('aria-disabled');
                 this._selectedContainer.setAttribute('tabindex', '0');
             }
         }
@@ -404,6 +414,7 @@
                     const removeBtn = document.createElement('span');
                     removeBtn.classList.add('snap-select-remove');
                     removeBtn.textContent = '×';
+                    removeBtn.setAttribute('aria-label', `Remove ${option.textContent}`);
                     removeBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         if (this._isDisabled()) return;
@@ -422,6 +433,7 @@
                     const clearAll = document.createElement('span');
                     clearAll.classList.add('snap-select-clear-all');
                     clearAll.textContent = '×';
+                    clearAll.setAttribute('aria-label', 'Clear all selections');
                     clearAll.addEventListener('click', (e) => {
                         e.stopPropagation();
                         if (this._isDisabled()) return;
@@ -447,6 +459,7 @@
                 removeBtn.classList.add('snap-select-clear-all');
                 removeBtn.textContent = '×';
                 removeBtn.style.float = 'right';
+                removeBtn.setAttribute('aria-label', 'Clear selection');
                 removeBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (this._isDisabled()) return;
@@ -496,6 +509,8 @@
             this._itemsContainer = document.createElement('div');
             this._itemsContainer.classList.add('snap-select-items');
             this._itemsContainer.setAttribute('role', 'listbox');
+            this._itemsContainer.id = this._listboxId;
+            this._itemsContainer.setAttribute('aria-activedescendant', '');
             if (this.isMultiple) this._itemsContainer.setAttribute('aria-multiselectable', 'true');
             this._itemsContainer.setAttribute('tabindex', '-1');
             this._itemsContainer.style.display = 'block';
@@ -541,6 +556,7 @@
                     ? (idx < items.length - 1 ? idx + 1 : 0)
                     : (idx > 0 ? idx - 1 : items.length - 1);
                 items[next]?.focus();
+                this._itemsContainer.setAttribute('aria-activedescendant', items[next]?.id || '');
             } else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 if (document.activeElement.classList.contains('snap-select-item')) {
@@ -642,6 +658,7 @@
             this._searchInput.classList.add('snap-select-search');
             this._searchInput.setAttribute('tabindex', '-1');
             this._searchInput.setAttribute('placeholder', 'Search...');
+            this._searchInput.setAttribute('aria-label', 'Search options');
             wrapper.appendChild(this._searchInput);
 
             this._clearSearchBtn = document.createElement('span');
@@ -752,10 +769,15 @@
         _createOptionItem(option) {
             const div = document.createElement('div');
             div.classList.add('snap-select-item');
+            div.setAttribute('role', 'option');
+            div.id        = 'snap-select-opt-' + option.value.replace(/\W/g, '_');
             div.dataset.value = option.value;
             div.dataset.key   = option.dataset.key || '';
 
-            if (option.disabled) div.classList.add('snap-select-item-disabled');
+            if (option.disabled) { 
+                div.classList.add('snap-select-item-disabled');
+                div.setAttribute('aria-disabled', 'true');
+            }
 
             if (this.isMultiple) {
                 this._buildMultipleItem(div, option);
@@ -772,6 +794,7 @@
             checkbox.classList.add('snap-select-checkbox');
             checkbox.checked = this._selectedValues.has(option.value);
             if (checkbox.checked) div.classList.add('snap-select-item-selected');
+            div.setAttribute('aria-selected', checkbox.checked ? 'true' : 'false');
             div.appendChild(checkbox);
 
             this._checkboxMap.set(option.value, checkbox);
@@ -789,11 +812,13 @@
                     vals.delete(option.value);
                     checkbox.checked = false;
                     div.classList.remove('snap-select-item-selected');
+                    div.setAttribute('aria-selected', 'false');
                     if (config.onItemDelete) config.onItemDelete.call(this.select, option.value, option.textContent);
                 } else if (vals.size < config.maxSelections) {
                     vals.add(option.value);
                     checkbox.checked = true;
                     div.classList.add('snap-select-item-selected');
+                    div.setAttribute('aria-selected', 'true');
                     if (config.onItemAdd) config.onItemAdd.call(this.select, option.value, option.textContent);
                 }
                 this._updateMultipleDisplay();
@@ -804,14 +829,20 @@
         _buildSingleItem(div, option) {
             div.textContent = option.textContent;
             div.setAttribute('tabindex', '-1');
-            if (option.value === this.select.value) div.classList.add('snap-select-item-selected');
+            const isSelected = option.value === this.select.value;
+            if (isSelected) div.classList.add('snap-select-item-selected');
+            div.setAttribute('aria-selected', isSelected ? 'true' : 'false');
 
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const { select, config } = this;
                 const prevValue  = select.value;
-                this._itemsContainer?.querySelectorAll('.snap-select-item').forEach(el => el.classList.remove('snap-select-item-selected'));
+                this._itemsContainer?.querySelectorAll('.snap-select-item').forEach(el => {
+                    el.classList.remove('snap-select-item-selected');
+                    el.setAttribute('aria-selected', 'false');
+                });
                 div.classList.add('snap-select-item-selected');
+                div.setAttribute('aria-selected', 'true');
                 select.value = option.value;
                 this._updateSingleSelect(option.textContent);
                 this._selectedContainer.classList.remove('snap-select-invalid');
