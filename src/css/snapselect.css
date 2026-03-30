@@ -8,7 +8,7 @@
 
 /* Hide the original select */
 .snap-select select {
-    display: none;
+    display: none !important;
 }
 
 /* Overlay for closing dropdown when clicking outside */
