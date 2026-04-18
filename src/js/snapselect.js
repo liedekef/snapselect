@@ -827,7 +827,10 @@
         }
 
         _buildSingleItem(div, option) {
-            div.textContent = option.textContent;
+            const label = document.createElement('label');
+            label.classList.add('snap-select-label');
+            label.textContent = option.textContent;
+            div.appendChild(label);
             div.setAttribute('tabindex', '-1');
             const isSelected = option.value === this.select.value;
             if (isSelected) div.classList.add('snap-select-item-selected');
