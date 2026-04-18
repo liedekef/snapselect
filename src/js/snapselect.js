@@ -100,6 +100,7 @@
             this._wireLabels();
             this._wireValidation();
             this._wireDisabled();
+            this._wireOptions();
             this._wireDOMCleanup();
 
             // positioning handlers
@@ -119,6 +120,8 @@
 
             this._disabledObserver?.disconnect();
             this._disabledObserver = null;
+            this._optionsObserver?.disconnect();
+            this._optionsObserver = null;
             (this._fieldsetObservers || []).forEach(o => o.disconnect());
             this._fieldsetObservers = null;
 
@@ -358,6 +361,40 @@
                 this._customSelect.removeAttribute('aria-disabled');
                 this._selectedContainer.setAttribute('tabindex', '0');
             }
+        }
+
+        // ── Options observer (JS-driven option mutations) ──────────────────────────
+        _wireOptions() {
+            // Skip for AJAX mode – options are managed internally by SnapSelect itself.
+            if (this.config.ajax) return;
+
+            this._optionsObserver = new MutationObserver(() => {
+                // 1. If the new first option is an empty-value option with text, treat it as
+                //    the placeholder (mirrors what _initSelection does at init time).
+                const firstOpt = this.select.options[0];
+                if (firstOpt && firstOpt.value === '') {
+                    const label = firstOpt.textContent.trim();
+                    if (label) this.config.placeholder = label;
+                    this.config.showClearButton = true;
+                }
+
+                // 2. Clear & refresh the display (bypasses _isDisabled so this works even
+                //    when the select is simultaneously set to disabled).
+                this.clear();
+
+                // 3. Re-populate the open dropdown so it reflects the new option list.
+                if (this._itemsContainer) {
+                    this._checkboxMap.clear();
+                    this._populateItems();
+                }
+            });
+
+            this._optionsObserver.observe(this.select, {
+                childList: true,   // <option> / <optgroup> added or removed
+                subtree:   true,   // catches options nested inside <optgroup>
+                characterData: true, // option label text edited in-place
+                characterDataOldValue: false,
+            });
         }
 
         // ── DOM cleanup observer ───────────────────────────────────────────────────
@@ -1042,7 +1079,6 @@
 
         // ── Public API ─────────────────────────────────────────────────────────────
         clear() {
-            if (this._isDisabled()) return;
             if (this.isMultiple) {
                 this._selectedValues.clear();
                 this._checkboxMap.forEach(cb => cb.checked = false);
@@ -1050,9 +1086,10 @@
             } else {
                 this.select.value = '';
                 this._updateSingleSelect(this.config.placeholder || this.config.defaultText, true);
-                this.select.dispatchEvent(new Event('change', { bubbles: true }));
-                this.select.dispatchEvent(new Event('input',  { bubbles: true }));
             }
+            // Fire change/input so external listeners are notified (same as before).
+            this.select.dispatchEvent(new Event('change', { bubbles: true }));
+            this.select.dispatchEvent(new Event('input',  { bubbles: true }));
         }
 
         refresh() {
