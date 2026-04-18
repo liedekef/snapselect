@@ -773,11 +773,19 @@
             div.id        = 'snap-select-opt-' + option.value.replace(/\W/g, '_');
             div.dataset.value = option.value;
             div.dataset.key   = option.dataset.key || '';
+            div.setAttribute('tabindex', '-1');
 
+            const label = document.createElement('label');
             if (option.disabled) { 
+                label.classList.add('snap-select-label-disabled'); // this class used so the item is not searched for in the search function
                 div.classList.add('snap-select-item-disabled');
                 div.setAttribute('aria-disabled', 'true');
+            } else {
+                label.classList.add('snap-select-label');
             }
+            label.textContent = option.textContent;
+            div.appendChild(label);
+
 
             if (this.isMultiple) {
                 this._buildMultipleItem(div, option);
@@ -799,14 +807,9 @@
 
             this._checkboxMap.set(option.value, checkbox);
 
-            const label = document.createElement('label');
-            label.classList.add('snap-select-label');
-            label.textContent = option.textContent;
-            div.appendChild(label);
-            div.setAttribute('tabindex', '-1');
-
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (option.disabled) return;
                 const { config, _selectedValues: vals } = this;
                 if (vals.has(option.value)) {
                     vals.delete(option.value);
@@ -827,17 +830,13 @@
         }
 
         _buildSingleItem(div, option) {
-            const label = document.createElement('label');
-            label.classList.add('snap-select-label');
-            label.textContent = option.textContent;
-            div.appendChild(label);
-            div.setAttribute('tabindex', '-1');
             const isSelected = option.value === this.select.value;
             if (isSelected) div.classList.add('snap-select-item-selected');
             div.setAttribute('aria-selected', isSelected ? 'true' : 'false');
 
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (option.disabled) return;
                 const { select, config } = this;
                 const prevValue  = select.value;
                 this._itemsContainer?.querySelectorAll('.snap-select-item').forEach(el => {

@@ -157,6 +157,25 @@
     background-color: #d0d4d8;
 }
 
+/* Disabled option item */
+.snap-select-item-disabled {
+    color: #b0b0b0;
+    pointer-events: auto;
+}
+
+/* No hover or focus highlight on disabled items */
+.snap-select-item-disabled:hover,
+.snap-select-item-disabled:focus {
+    background-color: transparent;
+    outline: none;
+}
+
+/* Mute the checkbox within a disabled item */
+.snap-select-item-disabled .snap-select-checkbox {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 /* Checkbox within dropdown items */
 .snap-select-checkbox {
     cursor: pointer;
