@@ -630,7 +630,7 @@
                 if (this._searchInput) this._searchInput.focus();
             } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
-                const items = Array.from(this._itemsContainer.querySelectorAll('.snap-select-item:not(.snap-select-item-disabled)'));
+                const items = Array.from(this._itemsContainer.querySelectorAll('.snap-select-item:not(.snap-select-item-disabled):not([style*="display: none"])'));
                 const idx   = items.indexOf(document.activeElement);
                 const next  = e.key === 'ArrowDown'
                     ? (idx < items.length - 1 ? idx + 1 : 0)
@@ -771,7 +771,9 @@
                     this._closeDropdown();
                 } else if (e.key === 'Tab') {
                     e.preventDefault();
-                    const first = this._itemsContainer.querySelector('.snap-select-item:not(.snap-select-item-disabled)');
+                    // also ignore those with display: none set inline
+                    const first = this._itemsContainer.querySelector('.snap-select-item:not(.snap-select-item-disabled):not([style*="display: none"])');
+                    //const first = this._itemsContainer.querySelector('.snap-select-item:not(.snap-select-item-disabled)');
                     if (first) first.focus();
                 }
             });
