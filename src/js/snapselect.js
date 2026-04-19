@@ -263,6 +263,27 @@
                     this._closeDropdown();
                 }
             });
+
+            // catch JS changes set done on the original select, where options are not rebuild (like just setting the value for example)
+            this._externalChangeHandler = (e) => {
+                // Only react to events not fired by SnapSelect itself
+                if (!e._snapSelectInternal) {
+                    if (this.isMultiple) {
+                        this._selectedValues.clear();
+                        Array.from(this.select.selectedOptions).forEach(opt => this._selectedValues.add(opt.value));
+                        this._checkboxMap.forEach((cb, val) => cb.checked = this._selectedValues.has(val));
+                        this._updateMultipleDisplay();
+                    } else {
+                        const opt = this.select.options[this.select.selectedIndex];
+                        if (opt && opt.value !== '') {
+                            this._updateSingleSelect(opt.textContent);
+                        } else {
+                            this._updateSingleSelect(this.config.placeholder || this.config.defaultText, true);
+                        }
+                    }
+                }
+            };
+            this.select.addEventListener('change', this._externalChangeHandler);
         }
 
         // ── Initialise selection display ───────────────────────────────────────────
@@ -369,7 +390,7 @@
             if (this.config.ajax) return;
 
             this._optionsObserver = new MutationObserver(() => {
-                // 1. If the new first option is an empty-value option with text, treat it as
+                // If the new first option is an empty-value option with text, treat it as
                 //    the placeholder (mirrors what _initSelection does at init time).
                 const firstOpt = this.select.options[0];
                 if (firstOpt && firstOpt.value === '') {
@@ -378,11 +399,28 @@
                     this.config.showClearButton = true;
                 }
 
-                // 2. Clear & refresh the display (bypasses _isDisabled so this works even
+                // Preserve whatever value the native select already has
+                const currentValue = this.select.value;
+
+                // Clear & refresh the display (bypasses _isDisabled so this works even
                 //    when the select is simultaneously set to disabled).
                 this.clear();
 
-                // 3. Re-populate the open dropdown so it reflects the new option list.
+                // If the native select already had a value set (e.g. externally before
+                // the observer fired), restore it in the UI without firing another event
+                // This is also needed when external JS rebuilds the option list and sets a value
+                if (currentValue && this.select.querySelector(`option[value="${currentValue}"]`)) {
+                    if (this.isMultiple) {
+                        this._selectedValues.add(currentValue);
+                        this._updateMultipleDisplay();
+                    } else {
+                        const opt = this.select.querySelector(`option[value="${currentValue}"]`);
+                        this.select.value = currentValue;
+                        this._updateSingleSelect(opt.textContent);
+                    }
+                }
+
+                // Re-populate the open dropdown so it reflects the new option list.
                 if (this._itemsContainer) {
                     this._checkboxMap.clear();
                     this._populateItems();
@@ -425,7 +463,10 @@
             this._tagContainer.innerHTML = '';
 
             Array.from(select.options).forEach(opt => { opt.selected = vals.has(opt.value); });
-            select.dispatchEvent(new Event('change', { bubbles: true }));
+            // we also set the _snapSelectInternal on the change event, so we can detect in the change listener that it comes from snapselect and avoid a loop
+            const changeEvent = new Event('change', { bubbles: true });
+            changeEvent._snapSelectInternal = true;
+            select.dispatchEvent(changeEvent);
             select.dispatchEvent(new Event('input',  { bubbles: true }));
 
             if (select.required && vals.size > 0) {
@@ -507,7 +548,9 @@
                     if (config.onItemDelete && prevValue) {
                         config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
                     }
-                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                    const changeEvent = new Event('change', { bubbles: true });
+                    changeEvent._snapSelectInternal = true;
+                    select.dispatchEvent(changeEvent);
                     select.dispatchEvent(new Event('input',  { bubbles: true }));
                 });
                 selectedText.appendChild(removeBtn);
@@ -812,6 +855,12 @@
             div.dataset.key   = option.dataset.key || '';
             div.setAttribute('tabindex', '-1');
 
+            if (this.isMultiple) {
+                this._buildMultipleItem(div, option);
+            } else {
+                this._buildSingleItem(div, option);
+            }
+
             const label = document.createElement('label');
             if (option.disabled) { 
                 label.classList.add('snap-select-label-disabled'); // this class used so the item is not searched for in the search function
@@ -822,13 +871,6 @@
             }
             label.textContent = option.textContent;
             div.appendChild(label);
-
-
-            if (this.isMultiple) {
-                this._buildMultipleItem(div, option);
-            } else {
-                this._buildSingleItem(div, option);
-            }
 
             return div;
         }
@@ -892,7 +934,10 @@
                     const prevOption = select.querySelector(`option[value="${prevValue}"]`);
                     config.onItemDelete.call(select, prevValue, prevOption ? prevOption.textContent : prevValue);
                 }
-                select.dispatchEvent(new Event('change', { bubbles: true }));
+                // we also set the _snapSelectInternal on the change event, so we can detect in the change listener that it comes from snapselect and avoid a loop
+                const changeEvent = new Event('change', { bubbles: true });
+                changeEvent._snapSelectInternal = true;
+                select.dispatchEvent(changeEvent);
                 select.dispatchEvent(new Event('input',  { bubbles: true }));
                 if (config.closeOnSelect) this._closeDropdown();
             });
@@ -1088,7 +1133,10 @@
                 this._updateSingleSelect(this.config.placeholder || this.config.defaultText, true);
             }
             // Fire change/input so external listeners are notified (same as before).
-            this.select.dispatchEvent(new Event('change', { bubbles: true }));
+            // we also set the _snapSelectInternal on the change event, so we can detect in the change listener that it comes from snapselect and avoid a loop
+            const changeEvent = new Event('change', { bubbles: true });
+            changeEvent._snapSelectInternal = true;
+            this.select.dispatchEvent(changeEvent);
             this.select.dispatchEvent(new Event('input',  { bubbles: true }));
         }
 
