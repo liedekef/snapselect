@@ -106,6 +106,7 @@
             // positioning handlers
             this._reposition    = () => this._positionDropdown();
             this._scrollHandler = (e) => { if (!this._itemsContainer?.contains(e.target)) this._positionDropdown(); };
+            // we'll use the resizeObserver when the container changes in size (due to multi-selected tags for example)
             this._resizeObserver = new ResizeObserver(this._reposition);
         }
 
@@ -584,6 +585,7 @@
 
             this._dropdownOverlay = document.createElement('div');
             this._dropdownOverlay.classList.add('snap-select-overlay');
+            this._dropdownOverlay.addEventListener('click', () => this._closeDropdown());
             document.body.appendChild(this._dropdownOverlay);
 
             this._itemsContainer = document.createElement('div');
@@ -597,16 +599,16 @@
             document.body.appendChild(this._itemsContainer);
 
             this._populateItems();
-            this._positionDropdown();
-            this._itemsContainer.focus();
             this._customSelect.setAttribute('aria-expanded', 'true');
+            requestAnimationFrame(() => {
+                this._positionDropdown();
+                this._itemsContainer?.focus();
+                this._itemsContainer.addEventListener('keydown', (e) => this._onDropdownKeydown(e));
 
-            this._itemsContainer.addEventListener('keydown', (e) => this._onDropdownKeydown(e));
-            this._dropdownOverlay.addEventListener('click',   () => this._closeDropdown());
-
-            window.addEventListener('scroll', this._scrollHandler, true);
-            window.addEventListener('resize', this._reposition);
-            this._resizeObserver.observe(this._selectedContainer);
+                window.addEventListener('scroll', this._scrollHandler, true);
+                window.addEventListener('resize', this._reposition);
+                this._resizeObserver.observe(this._selectedContainer);
+            });
         }
 
         _closeDropdown() {
@@ -1017,6 +1019,8 @@
             });
 
             if (this._hasMorePages) this._attachInfiniteSentinel();
+            // reposition needed
+            this._positionDropdown();
         }
 
         _attachInfiniteSentinel() {
