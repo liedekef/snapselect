@@ -339,6 +339,7 @@ The change-event and input-event on the underlying `<select>` are still emitted,
 -   `data-select-optgroups="true|false"` (boolean): Allows or disallows selecting all options within an optgroup.
 -   `data-select-all-option="true|false"` (boolean): Adds or removes the "Select All" option.
 -   `data-close-on-select="true|false"` (boolean): Closes or keeps open the dropdown after selection.
+-   `data-open-on-focus="true|false"` (boolean): If true, opens the dropdown after focus.
 
 ## Configuration Options
 
@@ -352,6 +353,8 @@ The change-event and input-event on the underlying `<select>` are still emitted,
 -   `selectOptgroups` (boolean): Allow selecting/deselecting all options within an optgroup. Default: `false`.
 -   `selectAllOption` (boolean): Add a "Select All" option for multi-select. Default: `false`.
 -   `closeOnSelect` (boolean): Close the dropdown after each selection (single-select only). Default: `true`.
+-   `openOnFocus` (boolean): Opens the dropdown automatically when the select receives focus (e.g. via Tab). Default: `false`.
+-   `openOnFocusIfEmoty` (boolean): Opens the dropdown automatically when the select receives focus (e.g. via Tab) and nothing is selected yet. Default: `false`.
 
 ### Callbacks
 

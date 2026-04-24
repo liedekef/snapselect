@@ -17,6 +17,8 @@
      * - selectOptgroups (boolean): Allows selecting all options within an optgroup.
      * - selectAllOption (boolean): Adds a "Select All" option to the dropdown (for multiple select).
      * - closeOnSelect (boolean): Closes the dropdown after selecting an option (single-select only).
+     * - openOnFocus (boolean): Opens the dropdown automatically when the select receives focus (e.g. via Tab). Default: false.
+     * - openOnFocusIfEmpty (boolean): Opens the dropdown automatically when the select receives focus (e.g. via Tab) and nothing is selected yet. Default: false.
      * - onItemAdd (function): Called when an item is selected. Receives (value, text).
      * - onItemDelete (function): Called when an item is deselected. Receives (value, text).
      *
@@ -143,17 +145,19 @@
             if (placeholderDefault)
                 showClearButtonDefault = true;
             const config = {
-                liveSearch:      pick(data.liveSearch,      options.liveSearch,      false),
-                maxSelections:   pick(data.maxSelections,   options.maxSelections,   options.maxItems !== undefined ? options.maxItems : Infinity),
-                placeholder:     placeholderDefault,
-                showClearButton: pick(data.showClearButton, options.showClearButton, options.clearAllButton !== undefined ? options.clearAllButton : (options.allowEmpty !== undefined ? options.allowEmpty : showClearButtonDefault)),
-                selectOptgroups: pick(data.selectOptgroups, options.selectOptgroups, false),
-                selectAllOption: pick(data.selectAllOption, options.selectAllOption, false),
-                closeOnSelect:   pick(data.closeOnSelect,   options.closeOnSelect,   true),
-                defaultText:     pick(data.defaultText,     options.defaultText,     'Select...'),
-                ajax:            options.ajax || null,
-                onItemAdd:       typeof options.onItemAdd    === 'function' ? options.onItemAdd    : null,
-                onItemDelete:    typeof options.onItemDelete === 'function' ? options.onItemDelete : null,
+                liveSearch:         pick(data.liveSearch,         options.liveSearch,         false),
+                maxSelections:      pick(data.maxSelections,      options.maxSelections,      options.maxItems !== undefined ? options.maxItems : Infinity),
+                placeholder:        placeholderDefault,
+                showClearButton:    pick(data.showClearButton,    options.showClearButton,    options.clearAllButton !== undefined ? options.clearAllButton : (options.allowEmpty !== undefined ? options.allowEmpty : showClearButtonDefault)),
+                selectOptgroups:    pick(data.selectOptgroups,    options.selectOptgroups,    false),
+                selectAllOption:    pick(data.selectAllOption,    options.selectAllOption,    false),
+                closeOnSelect:      pick(data.closeOnSelect,      options.closeOnSelect,      true),
+                openOnFocus:        pick(data.openOnFocus,        options.openOnFocus,        false),
+                openOnFocusIfEmpty: pick(data.openOnFocusIfEmpty, options.openOnFocusIfEmpty, false),
+                defaultText:        pick(data.defaultText,        options.defaultText,        'Select...'),
+                ajax:               options.ajax || null,
+                onItemAdd:          typeof options.onItemAdd    === 'function' ? options.onItemAdd    : null,
+                onItemDelete:       typeof options.onItemDelete === 'function' ? options.onItemDelete : null,
             };
 
             return config;
@@ -175,14 +179,16 @@
             const str  = (attr) => sel.hasAttribute(attr) ? sel.getAttribute(attr) : undefined;
 
             return {
-                liveSearch:      bool('data-live-search'),
-                maxSelections:   int('data-max-selections', 'data-max-items'),
-                placeholder:     str('data-placeholder'),
-                showClearButton: bool('data-show-clear-button', 'data-clear-all-button', 'data-allow-empty'),
-                selectOptgroups: bool('data-select-optgroups'),
-                selectAllOption: bool('data-select-all-option'),
-                closeOnSelect:   bool('data-close-on-select'),
-                defaultText:     str('data-default-text'),
+                liveSearch:         bool('data-live-search'),
+                maxSelections:      int('data-max-selections', 'data-max-items'),
+                placeholder:        str('data-placeholder'),
+                showClearButton:    bool('data-show-clear-button', 'data-clear-all-button', 'data-allow-empty'),
+                selectOptgroups:    bool('data-select-optgroups'),
+                selectAllOption:    bool('data-select-all-option'),
+                closeOnSelect:      bool('data-close-on-select'),
+                openOnFocus:        bool('data-open-on-focus'),
+                openOnFocusIfEmpty: bool('data-open-on-focus-if-empty'),
+                defaultText:        str('data-default-text'),
             };
         }
 
@@ -256,6 +262,13 @@
             this._selectedContainer.appendChild(this._tagContainer);
 
             this._selectedContainer.addEventListener('click',   (e) => this._toggleDropdown(e));
+            this._selectedContainer.addEventListener('focus',   ()  => {
+                const isEmpty = this.isMultiple 
+                    ? this._selectedValues.size === 0 
+                    : !this.select.value;
+                if (this.config.openOnFocus && !this._itemsContainer) this._openDropdown();
+                if (this.config.openOnFocusIfEmpty && !this._itemsContainer && isEmpty) this._openDropdown();
+            });
             this._selectedContainer.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
                     e.preventDefault();
