@@ -180,6 +180,8 @@ Expected response shape:
     "hasMore": true
 }
 ```
+Any properties beyond `id` and `text` are stored as data-* attributes on the underlying `<option>`
+
 
 ### AJAX — using processResults to map remote data
 
@@ -227,6 +229,7 @@ Example response shape:
     "TotalRecordCount": 10
 }
 ```
+Any properties beyond `id` and `text` are stored as data-* attributes on the underlying `<option>`
 
 ### AJAX — with extra parameters and POST
 
