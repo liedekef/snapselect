@@ -182,7 +182,11 @@ Expected response shape:
 }
 ```
 Any properties beyond `id`, `text` and `disabled` are stored as data-* attributes on the underlying `<option>`  
-If `disabled`, the option will be set to disabled regardless of the value given.
+If `disabled` is set, the option will be set to disabled regardless of the value given.  
+A result entry may also be an optgroup: { text: 'Label', children: [{id, text, ...extras}], ...groupExtras }.
+Group extras beyond `text`/`children` are stored as data-* attributes on the underlying `<optgroup>`
+element (accessible via option.parentElement.dataset); `disabled` disables the whole group and all of
+its options. Child entries follow the exact same rules as top-level options.
 
 ### AJAX — using processResults to map remote data
 
@@ -220,19 +224,28 @@ The server receives `q` (search term), `page`, and `pagesize` as query parameter
 GET /api/users?q=john&page=1&pagesize=2
 ```
 
-Example response shape:
+Example response shape (with an oprgroup example):
 ```json
 {
     "data": [
-        { "id": 1, "text": "John Doe" },
-        { "id": 2, "text": "John Smith", "disabled": "disabled" },
-        { "id": 3, "text": "Jane Doe" }
+        { id: 'us', text: 'United States' },
+        { text: 'Europe', countryCode: 'eu', children: [
+            { id: 'be', text: 'Belgium', capital: 'Brussels' },
+            { id: 'fr', text: 'France', disabled: true },
+        ]},
+        { text: 'Locked', disabled: true, children: [
+            { id: 'x1', text: 'X1' },
+        ]},
     ],
     "TotalRecordCount": 10
 }
 ```
 Any properties beyond `id`, `text` and `disabled` are stored as data-* attributes on the underlying `<option>`
-If `disabled`, the option will be set to disabled regardless of the value given.
+If `disabled`, the option will be set to disabled regardless of the value given.  
+A result entry may also be an optgroup: { text: 'Label', children: [{id, text, ...extras}], ...groupExtras }.
+Group extras beyond `text`/`children` are stored as data-* attributes on the underlying `<optgroup>`
+element (accessible via option.parentElement.dataset); `disabled` disables the whole group and all of
+its options. Child entries follow the exact same rules as top-level options.
 
 ### AJAX — with extra parameters and POST
 
@@ -390,7 +403,9 @@ Both callbacks work in static and AJAX modes and are independent of the native `
     -   `url` (string|function) **required**: The endpoint URL, or a function `(searchTerm, page) => string` for dynamic URLs. When a function, `this` refers to the underlying `<select>` element. When a function, this also changes the default cache value (see that option).
     -   `method` (string): HTTP method. Default: `'GET'`.
     -   `data` (object|function): Optional. A plain object of extra parameters, or a function `(searchTerm, page) => object`, merged into every request. When a function, `this` refers to the underlying `<select>` element. When a function, this also changes the default cache value (see that option).
-    -   `processResults` (function): Optional. Maps the raw server response to `{ results: [{id, text, ...extras}], hasMore: bool }`. `this` refers to the underlying `<select>` element. If omitted, SnapSelect expects the response to be either a plain array or an object with a `results` array and a `hasMore` boolean. Any extra properties on each result item beyond `id` and `text` are stored as `data-*` attributes on the underlying `<option>` element, making them accessible in `onItemAdd`/`onItemDelete` via `this.querySelector(\`option[value="${value}"]\`).dataset`.
+    -   `processResults` (function): Optional. Maps the raw server response to `{ results: [...], hasMore: bool }`. `this` refers to the underlying `<select>` element. If omitted, SnapSelect expects the response to be either a plain array or an object with a `results` array and a `hasMore` boolean. Each result entry is one of:
+        -   an option: `{ id, text, disabled?, ...extras }`. Any extra properties beyond `id`, `text` and `disabled` are stored as `data-*` attributes on the underlying `<option>` element, making them accessible in `onItemAdd`/`onItemDelete` via `this.querySelector(\`option[value="${value}"]\`).dataset`.
+        -   an optgroup: `{ text: 'Label', children: [{id, text, ...}], disabled?, ...extras }`. The group label comes from `text` (or `label`); `disabled` disables the whole group and all of its options. Group extras beyond `text`, `label`, `children` and `disabled` are stored as `data-*` attributes on the underlying `<optgroup>` element, accessible via `option.parentElement.dataset`. Child entries follow the exact same rules as top-level options.
     -   `delay` (number): Debounce delay in ms before firing a search request. Default: `300`.
     -   `minimumInputLength` (number): Minimum number of characters required before fetching. Default: `0`.
     -   `cache` (boolean): Cache results per (search + page) key to avoid redundant requests. Default: `false` if `url` or `data` is a function, `true` otherwise.

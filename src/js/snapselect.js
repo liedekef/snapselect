@@ -31,6 +31,10 @@
      *       Any properties beyond `id` and `text` are stored as data-* attributes on the underlying <option>
      *       element, making them accessible in onItemAdd/onItemDelete via
      *       this.querySelector(`option[value="${value}"]`).dataset.
+     *       A result entry may also be an optgroup: { text: 'Label', children: [{id, text, ...extras}], ...groupExtras }.
+     *       Group extras beyond `text`/`children` are stored as data-* attributes on the underlying <optgroup>
+     *       element (accessible via option.parentElement.dataset); `disabled` disables the whole group and all of
+     *       its options. Child entries follow the exact same rules as top-level options.
      *     - delay (number): Debounce delay in ms for search input, default 300.
      *     - minimumInputLength (number): Minimum characters before fetching, default 0.
      *     - cache (boolean): Cache results per (search+page) key. Default: `false` if `url` or `data` is a function, `true` otherwise.
@@ -836,13 +840,14 @@
         _buildOptgroup(optgroup) {
             const group = document.createElement('div');
             group.classList.add('snap-select-optgroup');
+            if (optgroup.disabled) group.classList.add('snap-select-optgroup-disabled');
 
             const label = document.createElement('div');
             label.classList.add('snap-select-optgroup-label');
             label.textContent      = optgroup.label;
             label.style.fontWeight = 'bold';
 
-            if (this.isMultiple && this.config.selectOptgroups) {
+            if (this.isMultiple && this.config.selectOptgroups && !optgroup.disabled) {
                 label.addEventListener('click', (e) => {
                     e.stopPropagation();
                     let added = 0;
@@ -879,7 +884,9 @@
             }
 
             const label = document.createElement('label');
-            if (option.disabled) { 
+            const isDisabled = option.disabled ||
+                (option.parentElement?.tagName === 'OPTGROUP' && option.parentElement.disabled);
+            if (isDisabled) {
                 label.classList.add('snap-select-label-disabled'); // this class used so the item is not searched for in the search function
                 div.classList.add('snap-select-item-disabled');
                 div.setAttribute('aria-disabled', 'true');
@@ -1019,24 +1026,62 @@
             this._cancelInfiniteObserver();
 
             results.forEach(item => {
-                if (!this.select.querySelector(`option[value="${item.id}"]`)) {
-                    const opt = document.createElement('option');
-                    opt.value       = item.id;
-                    opt.textContent = item.text;
-                    if (item.disabled) {
-                        opt.disabled = true;
-                    }
-                    Object.entries(item).forEach(([k, v]) => { if (k !== 'id' && k !== 'text' && k !== 'disabled') opt.dataset[k] = v; });
-                    this.select.appendChild(opt);
+                if (Array.isArray(item.children)) {
+                    this._appendResultGroup(item);
+                } else {
+                    this._itemsContainer.appendChild(
+                        this._createOptionItem(this._appendResultOption(item))
+                    );
                 }
-                this._itemsContainer.appendChild(
-                    this._createOptionItem(this.select.querySelector(`option[value="${item.id}"]`))
-                );
             });
 
             if (this._hasMorePages) this._attachInfiniteSentinel();
             // reposition needed
             this._positionDropdown();
+        }
+
+        _appendResultOption(item, optgroup = this.select) {
+            let opt = this.select.querySelector(`option[value="${item.id}"]`);
+            if (!opt) {
+                opt = document.createElement('option');
+                opt.value       = item.id;
+                opt.textContent = item.text;
+                if (item.disabled) opt.disabled = true;
+                Object.entries(item).forEach(([k, v]) => {
+                    if (k !== 'id' && k !== 'text' && k !== 'disabled') opt.dataset[k] = v;
+                });
+                optgroup.appendChild(opt);
+            }
+            return opt;
+        }
+
+        _appendResultGroup(group) {
+            const label = group.text ?? group.label ?? '';
+            let optgroup = Array.from(this.select.querySelectorAll('optgroup'))
+                .find(og => og.label === label);
+
+            let groupDiv = null;
+            if (optgroup) {
+                // group already rendered (e.g. from a previous page) -> reuse its dropdown wrapper
+                groupDiv = Array.from(this._itemsContainer.querySelectorAll('.snap-select-optgroup'))
+                    .find(g => g.querySelector('.snap-select-optgroup-label')?.textContent === label) || null;
+            } else {
+                optgroup = document.createElement('optgroup');
+                optgroup.label = label;
+                if (group.disabled) optgroup.disabled = true;
+                Object.entries(group).forEach(([k, v]) => {
+                    if (k !== 'text' && k !== 'label' && k !== 'children' && k !== 'disabled') optgroup.dataset[k] = v;
+                });
+                this.select.appendChild(optgroup);
+                groupDiv = this._buildOptgroup(optgroup);
+                this._itemsContainer.appendChild(groupDiv);
+            }
+
+            group.children.forEach(child => {
+                const itemDiv = this._createOptionItem(this._appendResultOption(child, optgroup));
+                if (groupDiv) groupDiv.appendChild(itemDiv);
+                else this._itemsContainer.appendChild(itemDiv);
+            });
         }
 
         _attachInfiniteSentinel() {

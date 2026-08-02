@@ -199,6 +199,16 @@
     transition: background-color 0.2s;
 }
 
+/* Disabled optgroup label */
+.snap-select-optgroup-disabled .snap-select-optgroup-label {
+    color: #b0b0b0;
+    cursor: not-allowed;
+}
+
+.snap-select-optgroup-disabled .snap-select-optgroup-label:hover {
+    background-color: transparent;
+}
+
 /* Hover effect on optgroup labels */
 .snap-select-optgroup-label:hover {
     background-color: #f3f5f6;
