@@ -1023,7 +1023,10 @@
                     const opt = document.createElement('option');
                     opt.value       = item.id;
                     opt.textContent = item.text;
-                    Object.entries(item).forEach(([k, v]) => { if (k !== 'id' && k !== 'text') opt.dataset[k] = v; });
+                    if (item.disabled) {
+                        opt.disabled = true;
+                    }
+                    Object.entries(item).forEach(([k, v]) => { if (k !== 'id' && k !== 'text' && k !== 'disabled') opt.dataset[k] = v; });
                     this.select.appendChild(opt);
                 }
                 this._itemsContainer.appendChild(

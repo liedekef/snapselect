@@ -175,13 +175,14 @@ Expected response shape:
 {
     "data": [
         { "id": 1, "text": "John Doe" },
-        { "id": 2, "text": "John Smith" }
+        { "id": 2, "text": "John Smith", "disabled": "disabled" },
+        { "id": 3, "text": "Jane Doe" }
     ],
     "hasMore": true
 }
 ```
-Any properties beyond `id` and `text` are stored as data-* attributes on the underlying `<option>`
-
+Any properties beyond `id`, `text` and `disabled` are stored as data-* attributes on the underlying `<option>`  
+If `disabled`, the option will be set to disabled regardless of the value given.
 
 ### AJAX — using processResults to map remote data
 
@@ -224,12 +225,14 @@ Example response shape:
 {
     "data": [
         { "id": 1, "text": "John Doe" },
-        { "id": 2, "text": "John Smith" }
+        { "id": 2, "text": "John Smith", "disabled": "disabled" },
+        { "id": 3, "text": "Jane Doe" }
     ],
     "TotalRecordCount": 10
 }
 ```
-Any properties beyond `id` and `text` are stored as data-* attributes on the underlying `<option>`
+Any properties beyond `id`, `text` and `disabled` are stored as data-* attributes on the underlying `<option>`
+If `disabled`, the option will be set to disabled regardless of the value given.
 
 ### AJAX — with extra parameters and POST
 
