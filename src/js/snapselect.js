@@ -1216,6 +1216,15 @@
         clearCache() {
             this._ajaxCache.clear();
         }
+
+        setPlaceholder(text) {
+            this.config.placeholder = text;
+            if (this.isMultiple) {
+                if (this._selectedValues.size === 0) this._updateMultipleDisplay();
+            } else if (!this.select.value) {
+                this._updateSingleSelect(this.config.placeholder || this.config.defaultText, true);
+            }
+        }
     }
 
     // ── Selector-string wrapper ────────────────────────────────────────────────

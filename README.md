@@ -430,6 +430,9 @@ select.refresh();
 
 // Clear the entire AJAX response cache
 select.clearCache();
+
+// Sets and refreshes the placeholder
+select.setPlaceholder('my new placeholder text');
 ```
 
 ## Form Validation
