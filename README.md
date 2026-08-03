@@ -224,7 +224,7 @@ The server receives `q` (search term), `page`, and `pagesize` as query parameter
 GET /api/users?q=john&page=1&pagesize=2
 ```
 
-Example response shape (with an oprgroup example):
+Example response shape (with an optgroup example):
 ```json
 {
     "data": [
