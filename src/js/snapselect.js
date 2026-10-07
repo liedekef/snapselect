@@ -73,6 +73,7 @@
         constructor(element, options = {}) {
             this.select     = element;
             this.isMultiple = element.multiple;
+            element._snapselect = this; // expose the instance on the element (like _fdatepicker), e.g. element._snapselect.clear()
             this.config     = this._buildConfig(options);
 
             if (this.config.maxSelections === 1) this.isMultiple = false;
@@ -94,6 +95,7 @@
             this._loadingIndicator = null;
             this._infiniteAnchor   = null;
             this._infiniteObserver = null;
+            this._selectAllCheckbox = null;
 
             // ── Selection state ──────────────────────────────────────────────────────
             this._selectedValues = new Set();
@@ -135,6 +137,7 @@
             this._customSelect = null;
             this._selectedContainer = null;
             this._itemsContainer = null;
+            if (this.select && this.select._snapselect === this) this.select._snapselect = null;
             this.select = null;
         }
 
@@ -468,7 +471,7 @@
                 });
             });
             setTimeout(() => {
-                if (this._customSelect.parentNode) {
+                if (this._customSelect?.parentNode) {
                     observer.observe(this._customSelect.parentNode, { childList: true, subtree: true });
                 }
             }, 0);
@@ -479,6 +482,8 @@
             const { select, config } = this;
             const vals = this._selectedValues;
             this._tagContainer.innerHTML = '';
+            this._syncItemStates();
+            this._syncSelectAll();
 
             Array.from(select.options).forEach(opt => { opt.selected = vals.has(opt.value); });
             // we also set the _snapSelectInternal on the change event, so we can detect in the change listener that it comes from snapselect and avoid a loop
@@ -634,6 +639,7 @@
             if (this._activeRequest)  { this._activeRequest.abort(); this._activeRequest = null; }
             if (this._debounceTimer)  { clearTimeout(this._debounceTimer); this._debounceTimer = null; }
             if (this._itemsContainer) { this._itemsContainer.remove(); this._itemsContainer = null; }
+            this._selectAllCheckbox = null;
             if (this._dropdownOverlay){ this._dropdownOverlay.remove(); this._dropdownOverlay = null; }
             window.removeEventListener('scroll', this._scrollHandler, true);
             window.removeEventListener('resize', this._reposition);
@@ -722,6 +728,7 @@
             if (!this._itemsContainer) return;
             this._itemsContainer.innerHTML = '';
             this._checkboxMap.clear();
+            this._selectAllCheckbox = null;
 
             if (this.config.ajax || this.config.liveSearch) {
                 this._buildSearchBar();
@@ -798,6 +805,35 @@
             });
         }
 
+        // options the "Select All" item acts on (everything except a leading empty placeholder option)
+        _selectableOptions() {
+            return Array.from(this.select.options).filter(o => !(o === this.select.options[0] && o.value === ''));
+        }
+
+        // keep the rows of an open dropdown (checkbox, highlight class, aria) in line with the selection,
+        // whatever changed it (row click, select-all, tag remove, clear(), external change)
+        _syncItemStates() {
+            this._checkboxMap.forEach((cb, val) => {
+                const selected = this._selectedValues.has(val);
+                cb.checked = selected;
+                const row = cb.closest('.snap-select-item');
+                if (row) {
+                    row.classList.toggle('snap-select-item-selected', selected);
+                    row.setAttribute('aria-selected', selected ? 'true' : 'false');
+                }
+            });
+        }
+
+        // checked = everything selectable is selected, indeterminate = only some are
+        _syncSelectAll() {
+            const cb = this._selectAllCheckbox;
+            if (!cb) return;
+            const max  = Math.min(this.config.maxSelections, this._selectableOptions().length);
+            const size = this._selectedValues.size;
+            cb.checked       = max > 0 && size >= max;
+            cb.indeterminate = size > 0 && !cb.checked;
+        }
+
         _buildSelectAllItem() {
             const div      = document.createElement('div');
             const checkbox = document.createElement('input');
@@ -811,16 +847,17 @@
 
             div.appendChild(checkbox);
             div.appendChild(label);
+            this._selectAllCheckbox = checkbox;
+            this._syncSelectAll(); // reflect the current selection when the dropdown is (re)opened
 
             div.addEventListener('click', () => {
-                const selectable  = Array.from(this.select.options).filter(o => !(o === this.select.options[0] && o.value === ''));
+                const selectable  = this._selectableOptions();
                 const maxSelected = Math.min(this.config.maxSelections, selectable.length);
                 const allSelected = this._selectedValues.size === maxSelected;
 
                 if (allSelected) {
                     this._selectedValues.clear();
                     this._checkboxMap.forEach(cb => cb.checked = false);
-                    checkbox.checked = false;
                 } else {
                     selectable.forEach(opt => {
                         if (this._selectedValues.size < maxSelected) {
@@ -829,9 +866,8 @@
                             if (cb) cb.checked = true;
                         }
                     });
-                    checkbox.checked = true;
                 }
-                this._updateMultipleDisplay();
+                this._updateMultipleDisplay(); // also syncs the select-all checkbox
             });
 
             return div;
