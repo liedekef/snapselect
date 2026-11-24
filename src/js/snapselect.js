@@ -215,6 +215,9 @@
         }
 
         // ── Empty option setup ─────────────────────────────────────────────────────
+        // 'option[selected]' (attribute, i.e. defaultSelected) is deliberate: the selected property is
+        // also true for the browser's automatic first-option selection, so it can't tell explicit from default.
+        // When populating via JS, set option.defaultSelected = true for a preselected option.
         _prepareEmptyOption() {
             const { select, config, isMultiple } = this;
             if (config.ajax) {
@@ -227,8 +230,8 @@
                 if (!isMultiple && config.placeholder && select.options[0] && select.options[0].value !== '') {
                     const opt = document.createElement('option');
                     opt.value    = '';
-                    opt.selected = !select.querySelector('option[selected]');
                     select.prepend(opt);
+                    opt.selected = !select.querySelector('option[selected]');
                 }
             }
         }
