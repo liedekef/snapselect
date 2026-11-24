@@ -102,6 +102,7 @@
             this._checkboxMap    = new Map();
 
             this._normaliseAjaxConfig();
+            this._placeholderIsExplicit = !!this.config.placeholder;
             this._prepareEmptyOption();
             this._buildDOM();
             this._initSelection();
@@ -315,8 +316,10 @@
 
             if (hasEmptyFirstOption) {
                 config.showClearButton = true;
-                const firstOptText = firstOpt.textContent.trim();
-                if (firstOptText) config.placeholder = firstOptText;
+                if (!this._placeholderIsExplicit) {
+                    const firstOptText = firstOpt.textContent.trim();
+                    if (firstOptText) config.placeholder = firstOptText;
+                }
                 if (isMultiple) select.remove(0); // safe to remove for multiple; not for single (form submission)
             }
 
@@ -324,7 +327,7 @@
                 Array.from(select.selectedOptions).forEach(opt => this._selectedValues.add(opt.value));
                 this._updateMultipleDisplay();
             } else {
-                const selectedOption = select.querySelector('option[selected]');
+                const selectedOption = select.options[select.selectedIndex];
                 if (selectedOption && selectedOption.value !== '') {
                     this._updateSingleSelect(selectedOption.textContent);
                 } else if (hasEmptyFirstOption || config.ajax || config.placeholder) {
@@ -416,7 +419,7 @@
                 const firstOpt = this.select.options[0];
                 if (firstOpt && firstOpt.value === '') {
                     const label = firstOpt.textContent.trim();
-                    if (label) this.config.placeholder = label;
+                    if (label && !this._placeholderIsExplicit) this.config.placeholder = label;
                     this.config.showClearButton = true;
                 }
 

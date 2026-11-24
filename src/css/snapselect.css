@@ -133,7 +133,7 @@
     user-select: none;
 }
 
-.snap-select-item .snap-select-all {
+.snap-select-item.snap-select-all {
     border-bottom: 1px solid #eee;
     font-weight: bold;
 }
